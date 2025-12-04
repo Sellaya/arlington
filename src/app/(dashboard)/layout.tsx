@@ -48,7 +48,7 @@ export default function DashboardLayout({
   return (
     <SidebarProvider>
       <div className="flex min-h-screen">
-        <Sidebar collapsible="icon">
+        <Sidebar collapsible="icon" className="border-r">
           <SidebarHeader>
             <Link href="/" className="flex items-center gap-2">
               <Bot className="text-primary" size={24} />

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { MessageSquare, Bot } from "lucide-react";
+import { Bot } from "lucide-react";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -65,7 +65,7 @@ export default function LoginPage() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
+          <Button className="w-full">
             Sign in
           </Button>
           <div className="text-center text-sm">
