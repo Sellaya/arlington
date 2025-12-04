@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -18,10 +19,16 @@ import { ThemeToggle } from "./theme-toggle";
 
 export function UserNav() {
   const userAvatar = PlaceHolderImages.find((img) => img.id === "user-avatar");
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
 
   return (
     <div className="flex items-center gap-4">
-      <ThemeToggle />
+      {mounted ? <ThemeToggle /> : <div className="h-10 w-10" /> }
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
