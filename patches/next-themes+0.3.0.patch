@@ -1,0 +1,35 @@
+diff --git a/node_modules/next-themes/dist/index.js b/node_modules/next-themes/dist/index.js
+index 9a385f0..426e82a 100644
+--- a/node_modules/next-themes/dist/index.js
++++ b/node_modules/next-themes/dist/index.js
+@@ -1,13 +1,13 @@
+ 'use strict';
+ 
+ var React = require('react');
+-var Server = require('react-dom/server');
++var Server = require('react-dom/server.browser');
+ 
+ function _interopDefaultLegacy (e) { return e && typeof e === 'object' && 'default' in e ? e : { 'default': e }; }
+ 
+ var Server__default = /*#__PURE__*/_interopDefaultLegacy(Server);
+ 
+ const ThemeContext = React.createContext(undefined);
+ const defaultThemes = ['light', 'dark'];
+ 
+ const useTheme = () => React.useContext(ThemeContext);
+diff --git a/node_modules/next-themes/package.json b/node_modules/next-themes/package.json
+index 1fe5874..1b43c68 100644
+--- a/node_modules/next-themes/package.json
++++ b/node_modules/next-themes/package.json
+@@ -43,7 +43,7 @@
+     "preconstruct": "preconstruct",
+     "postinstall": "preconstruct dev"
+   },
+-  "peerDependencies": {
+-    "react": "^16.8 || ^17 || ^18",
+-    "react-dom": "^16.8 || ^17 || ^18"
++  "peerDependencies": {
++    "react": "^16.8 || ^17 || ^18 || ^19",
++    "react-dom": "^16.8 || ^17 || ^18 || ^19"
+   }
+ }
