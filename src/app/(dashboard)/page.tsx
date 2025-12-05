@@ -32,127 +32,335 @@ export default async function DashboardPage() {
   const todayBookings = bookings.length;
 
   const kpiData = [
-    { title: "Total Calls", value: totalCalls.toString(), icon: Phone, change: '+0%' },
-    { title: "Total Chats", value: totalChats.toString(), icon: MessageSquare, change: '+0%' },
-    { title: 'New Leads', value: newLeads.toString(), icon: UserPlus, change: '+0%' },
-    { title: 'Total Bookings', value: todayBookings.toString(), icon: CalendarPlus, change: '+0%' },
+    { title: "Total Calls", value: totalCalls.toString(), icon: Phone, change: '+0%', color: 'primary' },
+    { title: "Total Chats", value: totalChats.toString(), icon: MessageSquare, change: '+0%', color: 'accent' },
+    { title: 'New Leads', value: newLeads.toString(), icon: UserPlus, change: '+0%', color: 'primary' },
+    { title: 'Total Bookings', value: todayBookings.toString(), icon: CalendarPlus, change: '+0%', color: 'accent' },
   ];
+
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 lg:gap-8 xl:gap-10 animate-fade-in-up">
-      {/* Page Header */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between lg:gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold font-headline">Dashboard</h1>
-          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground mt-1 lg:mt-2">
+    <div className="flex flex-col w-full">
+      {/* Page Header Section */}
+      <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10">
+        <div className="flex flex-col gap-2 sm:gap-3">
+          <h1 
+            className="font-bold font-headline text-foreground"
+            style={{ fontSize: 'clamp(1.75rem, 1.5rem + 1.5vw, 2.5rem)' }}
+          >
+            Dashboard
+          </h1>
+          <p 
+            className="text-muted-foreground font-normal"
+            style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+          >
             Overview of your AI receptionist activity
           </p>
         </div>
-      </div>
+      </section>
 
-      {/* KPI Cards - Responsive Grid */}
-      <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:gap-6 2xl:gap-8">
-        {kpiData.map((kpi, index) => (
-          <Card 
-            key={kpi.title}
-            className="animate-fade-in-up hover:shadow-3d-lg transition-all duration-300"
-            style={{ animationDelay: `${index * 100}ms` }}
-          >
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 sm:pb-3 lg:pb-4">
-              <CardTitle className="text-xs sm:text-sm lg:text-base font-medium">{kpi.title}</CardTitle>
-              <div className="rounded-full bg-primary/10 p-2 sm:p-2.5 lg:p-3 shadow-3d-sm">
-                <kpi.icon className="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                {kpi.value}
-              </div>
-              <p className="text-xs sm:text-sm lg:text-base text-muted-foreground mt-1.5 sm:mt-2 lg:mt-3">{kpi.change} from yesterday</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* KPI Cards Section - Mobile-first Grid */}
+      <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+          {kpiData.map((kpi, index) => (
+            <Card 
+              key={kpi.title}
+              className="group relative overflow-hidden border-border/60 bg-card/95 backdrop-blur-sm transition-all duration-300 hover:shadow-3d-md hover:-translate-y-1 animate-fade-in-up"
+              style={{ 
+                animationDelay: `${index * 100}ms`,
+                animationFillMode: 'both'
+              }}
+            >
+              <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-3 sm:pb-4">
+                <div className="flex flex-col gap-1 sm:gap-2 flex-1 min-w-0">
+                  <CardTitle 
+                    className="font-medium text-muted-foreground truncate"
+                    style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                  >
+                    {kpi.title}
+                  </CardTitle>
+                  <div 
+                    className="font-bold text-foreground"
+                    style={{ fontSize: 'clamp(1.5rem, 1.25rem + 1.5vw, 2.5rem)' }}
+                  >
+                    {kpi.value}
+                  </div>
+                </div>
+                <div className="flex-shrink-0 ml-3">
+                  <div className="rounded-xl bg-primary/10 p-2 sm:p-2.5 md:p-3 shadow-3d-sm group-hover:shadow-glow-primary transition-all duration-300">
+                    <kpi.icon 
+                      className="text-primary"
+                      style={{ 
+                        width: 'clamp(1rem, 0.875rem + 0.5vw, 1.5rem)',
+                        height: 'clamp(1rem, 0.875rem + 0.5vw, 1.5rem)'
+                      }}
+                    />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p 
+                  className="text-muted-foreground font-normal"
+                  style={{ fontSize: 'clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem)' }}
+                >
+                  {kpi.change} from yesterday
+                </p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
 
-      {/* Activity Feed - Full Width on Desktop */}
-      <Card className="w-full">
-        <CardHeader className="pb-3 sm:pb-4 lg:pb-6">
-          <CardTitle className="text-lg sm:text-xl lg:text-2xl">Live Activity Feed</CardTitle>
-          <CardDescription className="text-xs sm:text-sm lg:text-base">
-            An overview of the most recent interactions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-4 sm:p-5 md:p-6 lg:p-8">
-          <div className="overflow-x-auto -mx-4 sm:-mx-5 md:-mx-6 lg:-mx-8">
-            <div className="inline-block min-w-full align-middle px-4 sm:px-5 md:px-6 lg:px-8">
-              <Table className="w-full">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[200px] lg:min-w-[250px]">Customer</TableHead>
-                    <TableHead className="hidden sm:table-cell lg:min-w-[120px]">Channel</TableHead>
-                    <TableHead className="min-w-[100px] lg:min-w-[120px]">Status</TableHead>
-                    <TableHead className="hidden md:table-cell text-right lg:min-w-[180px]">Time</TableHead>
-                    <TableHead className="sm:hidden text-right">Time</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {interactions.slice(0, 10).map((interaction) => (
-                    <TableRow key={interaction.id} className="group">
-                      <TableCell>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <Avatar className="h-8 w-8 sm:h-10 sm:w-10">
-                            <AvatarImage src={interaction.customer.avatar} alt={interaction.customer.name} />
-                            <AvatarFallback>
-                              {interaction.customer.name.charAt(0)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0 flex-1">
-                            <div className="font-medium text-sm sm:text-base truncate">{interaction.customer.name}</div>
-                            <div className="text-xs sm:text-sm text-muted-foreground truncate">
-                              {interaction.contact}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">
-                        <Badge variant="outline" className="flex w-fit items-center gap-1">
-                          {interaction.channel === 'Call' ? (
-                            <Phone className="h-3 w-3" />
-                          ) : (
-                            <MessageSquare className="h-3 w-3" />
-                          )}
-                          <span className="hidden md:inline">{interaction.channel}</span>
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            interaction.status === 'Completed'
-                              ? 'default'
-                              : interaction.status === 'Missed'
-                              ? 'destructive'
-                              : 'secondary'
-                          }
-                          className="bg-opacity-20 text-foreground text-xs sm:text-sm"
-                        >
-                          {interaction.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-xs sm:text-sm text-muted-foreground text-right">
-                        <span className="hidden md:inline">
-                          {formatDistanceToNow(interaction.timestamp, { addSuffix: true })}
-                        </span>
-                        <span className="md:hidden">
-                          {formatDistanceToNow(interaction.timestamp, { addSuffix: false })}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+      {/* Live Activity Feed Section */}
+      <section>
+        <Card className="w-full border-border/60 bg-card/95 backdrop-blur-sm">
+          <CardHeader className="pb-4 sm:pb-5 md:pb-6">
+            <div className="flex flex-col gap-1 sm:gap-2">
+              <CardTitle 
+                className="font-bold"
+                style={{ fontSize: 'clamp(1.125rem, 1rem + 0.75vw, 1.5rem)' }}
+              >
+                Live Activity Feed
+              </CardTitle>
+              <CardDescription 
+                style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+              >
+                An overview of the most recent interactions
+              </CardDescription>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent className="p-0 sm:p-4 md:p-6 lg:p-8">
+            {/* Mobile: Vertical List */}
+            <div className="block sm:hidden">
+              <div className="flex flex-col divide-y divide-border/60">
+                {interactions.slice(0, 10).map((interaction) => (
+                  <div 
+                    key={interaction.id}
+                    className="p-4 active:bg-muted/30 transition-colors duration-150"
+                  >
+                    <div className="flex items-start gap-3">
+                      <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-border/40">
+                        <AvatarImage src={interaction.customer.avatar} alt={interaction.customer.name} />
+                        <AvatarFallback className="text-sm font-medium">
+                          {interaction.customer.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between gap-2 mb-2">
+                          <div className="flex-1 min-w-0">
+                            <p 
+                              className="font-semibold text-foreground truncate"
+                              style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                            >
+                              {interaction.customer.name}
+                            </p>
+                            <p 
+                              className="text-muted-foreground truncate mt-0.5"
+                              style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                            >
+                              {interaction.contact}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={interaction.status === 'Completed' ? 'default' : interaction.status === 'Missed' ? 'destructive' : 'secondary'}
+                            className="flex-shrink-0 text-xs"
+                          >
+                            {interaction.status}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <Badge variant="outline" className="text-xs">
+                            {interaction.channel === 'Call' ? (
+                              <><Phone className="h-3 w-3 mr-1" />Call</>
+                            ) : (
+                              <><MessageSquare className="h-3 w-3 mr-1" />Chat</>
+                            )}
+                          </Badge>
+                          <span 
+                            className="text-muted-foreground"
+                            style={{ fontSize: 'clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem)' }}
+                          >
+                            {formatDistanceToNow(interaction.timestamp, { addSuffix: true })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tablet: 2-Column Table */}
+            <div className="hidden sm:block lg:hidden">
+              <div className="overflow-x-auto -mx-4 sm:-mx-4 md:-mx-6">
+                <div className="inline-block min-w-full align-middle px-4 sm:px-4 md:px-6">
+                  <Table className="w-full">
+                    <TableHeader>
+                      <TableRow className="border-border/60">
+                        <TableHead 
+                          className="font-semibold"
+                          style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                        >
+                          Customer
+                        </TableHead>
+                        <TableHead 
+                          className="font-semibold text-right"
+                          style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                        >
+                          Status
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {interactions.slice(0, 10).map((interaction) => (
+                        <TableRow 
+                          key={interaction.id} 
+                          className="group border-border/40 hover:bg-muted/30 transition-colors"
+                        >
+                          <TableCell className="py-3 sm:py-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-9 w-9 flex-shrink-0 ring-2 ring-border/40">
+                                <AvatarImage src={interaction.customer.avatar} alt={interaction.customer.name} />
+                                <AvatarFallback className="text-xs">
+                                  {interaction.customer.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p 
+                                  className="font-semibold text-foreground truncate"
+                                  style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                                >
+                                  {interaction.customer.name}
+                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {interaction.channel === 'Call' ? (
+                                      <><Phone className="h-3 w-3 mr-1" />Call</>
+                                    ) : (
+                                      <><MessageSquare className="h-3 w-3 mr-1" />Chat</>
+                                    )}
+                                  </Badge>
+                                  <span 
+                                    className="text-muted-foreground"
+                                    style={{ fontSize: 'clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem)' }}
+                                  >
+                                    {formatDistanceToNow(interaction.timestamp, { addSuffix: true })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right py-3 sm:py-4">
+                            <Badge
+                              variant={interaction.status === 'Completed' ? 'default' : interaction.status === 'Missed' ? 'destructive' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {interaction.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+
+            {/* Desktop: Full Table */}
+            <div className="hidden lg:block">
+              <div className="overflow-x-auto -mx-4 sm:-mx-5 md:-mx-6 lg:-mx-8">
+                <div className="inline-block min-w-full align-middle px-4 sm:px-5 md:px-6 lg:px-8">
+                  <Table className="w-full">
+                    <TableHeader>
+                      <TableRow className="border-border/60">
+                        <TableHead 
+                          className="font-semibold"
+                          style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                        >
+                          Customer
+                        </TableHead>
+                        <TableHead 
+                          className="font-semibold"
+                          style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                        >
+                          Channel
+                        </TableHead>
+                        <TableHead 
+                          className="font-semibold"
+                          style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                        >
+                          Status
+                        </TableHead>
+                        <TableHead 
+                          className="font-semibold text-right"
+                          style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                        >
+                          Time
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {interactions.slice(0, 10).map((interaction) => (
+                        <TableRow 
+                          key={interaction.id} 
+                          className="group border-border/40 hover:bg-muted/30 transition-colors"
+                        >
+                          <TableCell className="py-4">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10 flex-shrink-0 ring-2 ring-border/40">
+                                <AvatarImage src={interaction.customer.avatar} alt={interaction.customer.name} />
+                                <AvatarFallback className="text-sm">
+                                  {interaction.customer.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div className="flex-1 min-w-0">
+                                <p 
+                                  className="font-semibold text-foreground truncate"
+                                  style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                                >
+                                  {interaction.customer.name}
+                                </p>
+                                <p 
+                                  className="text-muted-foreground truncate mt-0.5"
+                                  style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                                >
+                                  {interaction.contact}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <Badge variant="outline" className="text-xs">
+                              {interaction.channel === 'Call' ? (
+                                <><Phone className="h-3 w-3 mr-1" />Call</>
+                              ) : (
+                                <><MessageSquare className="h-3 w-3 mr-1" />Chat</>
+                              )}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="py-4">
+                            <Badge
+                              variant={interaction.status === 'Completed' ? 'default' : interaction.status === 'Missed' ? 'destructive' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {interaction.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell 
+                            className="text-right text-muted-foreground py-4"
+                            style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                          >
+                            {formatDistanceToNow(interaction.timestamp, { addSuffix: true })}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }

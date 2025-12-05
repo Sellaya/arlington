@@ -18,6 +18,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card } from '@/components/ui/card';
 import type { Lead, Contact } from '@/lib/types';
 import { format } from 'date-fns';
 import { Search, Briefcase, Users } from 'lucide-react';
@@ -114,49 +116,112 @@ export default function ManagementPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4 sm:gap-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold font-headline">Management</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-1">Manage your leads and contacts.</p>
-        </div>
-        <div className="text-center py-12 sm:py-16 text-muted-foreground">
-          <div className="inline-block animate-pulse">Loading data...</div>
-        </div>
+      <div className="flex flex-col w-full">
+        {/* Page Header Skeleton */}
+        <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-4 w-64" />
+        </section>
+
+        {/* Search Skeleton */}
+        <section className="mb-4 sm:mb-6 md:mb-8">
+          <Skeleton className="h-11 w-full sm:w-64 lg:w-80" />
+        </section>
+
+        {/* Tabs Skeleton */}
+        <section>
+          <Skeleton className="h-10 w-full sm:w-auto mb-4" />
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-16 w-full" />
+            ))}
+          </div>
+        </section>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 lg:gap-8 xl:gap-10">
-      {/* Page Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between lg:gap-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold font-headline">Management</h1>
-          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground mt-1 lg:mt-2">
-            Manage your leads and contacts
-          </p>
+    <div className="flex flex-col w-full">
+      {/* Page Header Section */}
+      <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+          <div className="flex-1 min-w-0">
+            <h1 
+              className="font-bold font-headline text-foreground mb-2"
+              style={{ fontSize: 'clamp(1.75rem, 1.5rem + 1.5vw, 2.5rem)' }}
+            >
+              Management
+            </h1>
+            <p 
+              className="text-muted-foreground font-normal"
+              style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+            >
+              Manage your leads and contacts
+            </p>
+          </div>
+          <div className="relative w-full sm:w-64 lg:w-80 xl:w-96 flex-shrink-0">
+            <Search 
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+              style={{ 
+                width: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)',
+                height: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)'
+              }}
+            />
+            <Input 
+              placeholder="Search leads and contacts..." 
+              className="pl-10"
+              style={{ 
+                height: 'clamp(2.25rem, 2rem + 0.5vw, 2.75rem)',
+                fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)'
+              }}
+            />
+          </div>
         </div>
-        <div className="relative w-full sm:w-64 lg:w-80 xl:w-96">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
-          <Input placeholder="Search leads and contacts..." className="pl-10 lg:h-11 lg:text-base" />
-        </div>
-      </div>
+      </section>
 
-      {/* Tabs with Enhanced Layout */}
-      <Tabs defaultValue="leads" className="w-full">
-        <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex lg:gap-2">
-          <TabsTrigger value="leads" className="w-full sm:w-auto lg:px-6 lg:h-11 lg:text-base">
-            <Briefcase className="mr-2 h-4 w-4 lg:h-5 lg:w-5" />
-            <span>Leads</span>
-            <span className="ml-2">({leads.length})</span>
-          </TabsTrigger>
-          <TabsTrigger value="contacts" className="w-full sm:w-auto lg:px-6 lg:h-11 lg:text-base">
-            <Users className="mr-2 h-4 w-4 lg:h-5 lg:w-5" />
-            <span>Contacts</span>
-            <span className="ml-2">({contacts.length})</span>
-          </TabsTrigger>
-        </TabsList>
-        <TabsContent value="leads" className="mt-4 sm:mt-6 lg:mt-8">
+      {/* Tabs Section */}
+      <section>
+        <Tabs defaultValue="leads" className="w-full">
+          <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:inline-flex lg:gap-2 mb-4 sm:mb-6 lg:mb-8">
+            <TabsTrigger 
+              value="leads" 
+              className="w-full sm:w-auto"
+              style={{ 
+                fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)',
+                height: 'clamp(2.25rem, 2rem + 0.5vw, 2.75rem)'
+              }}
+            >
+              <Briefcase 
+                className="mr-2"
+                style={{ 
+                  width: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)',
+                  height: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)'
+                }}
+              />
+              <span>Leads</span>
+              <span className="ml-2">({leads.length})</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="contacts" 
+              className="w-full sm:w-auto"
+              style={{ 
+                fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)',
+                height: 'clamp(2.25rem, 2rem + 0.5vw, 2.75rem)'
+              }}
+            >
+              <Users 
+                className="mr-2"
+                style={{ 
+                  width: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)',
+                  height: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)'
+                }}
+              />
+              <span>Contacts</span>
+              <span className="ml-2">({contacts.length})</span>
+            </TabsTrigger>
+          </TabsList>
+          <TabsContent value="leads" className="mt-0">
           {leads.length > 0 ? (
             <div className="overflow-x-auto -mx-4 sm:-mx-5 md:-mx-6 lg:-mx-8">
               <div className="inline-block min-w-full align-middle px-4 sm:px-5 md:px-6 lg:px-8">
@@ -170,7 +235,7 @@ export default function ManagementPage() {
             </div>
           )}
         </TabsContent>
-        <TabsContent value="contacts" className="mt-4 sm:mt-6 lg:mt-8">
+          <TabsContent value="contacts" className="mt-0">
           {contacts.length > 0 ? (
             <div className="overflow-x-auto -mx-4 sm:-mx-5 md:-mx-6 lg:-mx-8">
               <div className="inline-block min-w-full align-middle px-4 sm:px-5 md:px-6 lg:px-8">
@@ -183,8 +248,9 @@ export default function ManagementPage() {
               <p className="text-sm sm:text-base">No contacts found</p>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+          </TabsContent>
+        </Tabs>
+      </section>
     </div>
   );
 }

@@ -116,6 +116,54 @@
       radial-gradient(at 100% 100%, rgba(256, 75, 72, 0.03) 0px, transparent 50%);
   }
 
+  /* Fluid Typography with clamp() */
+  .text-fluid-xs {
+    font-size: clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem); /* 10px - 12px */
+  }
+
+  .text-fluid-sm {
+    font-size: clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem); /* 12px - 14px */
+  }
+
+  .text-fluid-base {
+    font-size: clamp(0.875rem, 0.75rem + 0.5vw, 1rem); /* 14px - 16px */
+  }
+
+  .text-fluid-lg {
+    font-size: clamp(1rem, 0.875rem + 0.5vw, 1.125rem); /* 16px - 18px */
+  }
+
+  .text-fluid-xl {
+    font-size: clamp(1.125rem, 1rem + 0.5vw, 1.25rem); /* 18px - 20px */
+  }
+
+  .text-fluid-2xl {
+    font-size: clamp(1.25rem, 1rem + 1vw, 1.5rem); /* 20px - 24px */
+  }
+
+  .text-fluid-3xl {
+    font-size: clamp(1.5rem, 1.25rem + 1vw, 2rem); /* 24px - 32px */
+  }
+
+  .text-fluid-4xl {
+    font-size: clamp(1.875rem, 1.5rem + 1.5vw, 2.25rem); /* 30px - 36px */
+  }
+
+  .text-fluid-5xl {
+    font-size: clamp(2.25rem, 1.875rem + 1.5vw, 3rem); /* 36px - 48px */
+  }
+
+  /* Spacing Tokens */
+  .space-token-1 { gap: 0.25rem; } /* 4px */
+  .space-token-2 { gap: 0.5rem; } /* 8px */
+  .space-token-3 { gap: 0.75rem; } /* 12px */
+  .space-token-4 { gap: 1rem; } /* 16px */
+  .space-token-5 { gap: 1.25rem; } /* 20px */
+  .space-token-6 { gap: 1.5rem; } /* 24px */
+  .space-token-8 { gap: 2rem; } /* 32px */
+  .space-token-10 { gap: 2.5rem; } /* 40px */
+  .space-token-12 { gap: 3rem; } /* 48px */
+
   button {
     @apply cursor-pointer;
     -webkit-tap-highlight-color: transparent;
@@ -161,5 +209,15 @@
 
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }

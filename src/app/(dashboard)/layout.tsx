@@ -179,11 +179,49 @@ export default function DashboardLayout({
             </div>
           </header>
 
-          <main className="flex-1 px-3 pb-6 pt-4 sm:px-4 sm:pb-8 sm:pt-6 md:px-6 md:pb-10 md:pt-8 lg:px-8 lg:pb-12 lg:pt-10 xl:px-10 xl:pb-14 xl:pt-12 2xl:px-12 2xl:pb-16 2xl:pt-14">
+          <main className="flex-1 px-3 pb-20 pt-4 sm:px-4 sm:pb-8 sm:pt-6 md:px-6 md:pb-10 md:pt-8 lg:px-8 lg:pb-12 lg:pt-10 xl:px-10 xl:pb-14 xl:pt-12 2xl:px-12 2xl:pb-16 2xl:pt-14">
             <div className="mx-auto flex w-full flex-col gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 2xl:gap-10" style={{ maxWidth: '100%' }}>
               {children}
             </div>
           </main>
+
+          {/* Mobile Bottom Navigation */}
+          <nav 
+            className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 bg-background/95 backdrop-blur-xl shadow-3d-lg md:hidden"
+            aria-label="Main navigation"
+          >
+            <div className="grid grid-cols-6 h-16">
+              {navItems.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href));
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    aria-label={item.label}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex flex-col items-center justify-center gap-1 transition-all duration-200 ${
+                      isActive
+                        ? 'text-primary bg-primary/10'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/30'
+                    }`}
+                  >
+                    <item.icon 
+                      className="h-5 w-5"
+                      aria-hidden="true"
+                    />
+                    <span 
+                      className="text-xs font-medium truncate w-full text-center px-1"
+                      style={{ fontSize: 'clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem)' }}
+                    >
+                      {item.label}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
         </SidebarInset>
       </div>
     </SidebarProvider>

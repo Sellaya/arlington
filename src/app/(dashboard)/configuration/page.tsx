@@ -56,22 +56,33 @@ export default function ConfigurationPage() {
       description: "Saving this data is not implemented in the MVP version.",
       variant: "default",
     })
-    console.log(values)
+    // Values would be saved to backend in production
   }
 
   return (
-    <div className="flex flex-col gap-4 sm:gap-6 lg:gap-8 xl:gap-10">
-      {/* Page Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold font-headline">Configuration</h1>
-        <p className="text-sm sm:text-base lg:text-lg text-muted-foreground mt-1 lg:mt-2">
-          Customize your AI receptionist's behavior and settings
-        </p>
-      </div>
+    <div className="flex flex-col w-full">
+      {/* Page Header Section */}
+      <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10">
+        <div className="flex flex-col gap-2 sm:gap-3">
+          <h1 
+            className="font-bold font-headline text-foreground"
+            style={{ fontSize: 'clamp(1.75rem, 1.5rem + 1.5vw, 2.5rem)' }}
+          >
+            Configuration
+          </h1>
+          <p 
+            className="text-muted-foreground font-normal"
+            style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+          >
+            Customize your AI receptionist's behavior and settings
+          </p>
+        </div>
+      </section>
 
-      {/* Form with Responsive Layout */}
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6 lg:space-y-8 xl:space-y-10">
+      {/* Form Section */}
+      <section>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 sm:space-y-6 lg:space-y-8 xl:space-y-10">
             {/* General Settings Card */}
             <Card>
                 <CardHeader className="pb-3 sm:pb-4 lg:pb-6">
@@ -214,8 +225,9 @@ export default function ConfigurationPage() {
                     Save Configuration
                 </Button>
             </div>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </section>
     </div>
   )
 }
