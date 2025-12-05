@@ -21,6 +21,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 import type { Booking } from "@/lib/types"
 import { format, isToday, isPast } from "date-fns"
 import { 
@@ -40,7 +48,8 @@ import {
   Phone,
   Mail,
   Grid3x3,
-  List
+  List,
+  X
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -70,6 +79,7 @@ export default function BookingsPage() {
   const [selectedDate, setSelectedDate] = React.useState<Date | null>(null)
   const [expandedCards, setExpandedCards] = React.useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = React.useState<ViewMode>('cards')
+  const [filtersOpen, setFiltersOpen] = React.useState(false)
 
   React.useEffect(() => {
     fetch('/api/data')
@@ -196,7 +206,16 @@ export default function BookingsPage() {
     })
   }
 
-  // Enhanced Appointment Card Component
+  // Count active filters
+  const activeFiltersCount = React.useMemo(() => {
+    let count = 0
+    if (searchQuery.trim()) count++
+    if (statusFilter !== 'all') count++
+    if (selectedDate) count++
+    return count
+  }, [searchQuery, statusFilter, selectedDate])
+
+  // Enhanced Appointment Card Component - Mobile First
   const AppointmentCard = ({ booking }: { booking: Booking }) => {
     const bookingDate = booking.dateTime instanceof Date ? booking.dateTime : new Date(booking.dateTime)
     const isPastBooking = isPast(bookingDate) && !isToday(bookingDate)
@@ -205,7 +224,7 @@ export default function BookingsPage() {
     
     return (
       <Card
-        className={`group border-2 transition-all duration-300 hover:shadow-3d-md hover:-translate-y-1 touch-3d active:scale-[0.98] transform-gpu ${
+        className={`group w-full border-2 transition-all duration-300 hover:shadow-3d-md hover:-translate-y-1 touch-3d active:scale-[0.98] transform-gpu ${
           isPastBooking 
             ? 'border-border/40 bg-muted/20 opacity-75' 
             : isTodayBooking
@@ -213,12 +232,12 @@ export default function BookingsPage() {
             : 'border-border/60 bg-gradient-to-br from-card/95 to-card/90 backdrop-blur-sm hover:border-primary/30'
         }`}
       >
-        <CardContent className="p-4 sm:p-5 lg:p-6">
-          <div className="flex flex-col gap-4">
+        <CardContent className="p-4 sm:p-5 md:p-6">
+          <div className="flex flex-col gap-3 sm:gap-4">
             {/* Header: Service & Status */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <h3 
                     className="font-bold text-foreground line-clamp-2"
                     style={{ fontSize: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)' }}
@@ -226,12 +245,12 @@ export default function BookingsPage() {
                     {booking.service}
                   </h3>
                   {isTodayBooking && (
-                    <Badge variant="default" className="text-xs">
+                    <Badge variant="default" className="text-xs flex-shrink-0">
                       Today
                     </Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   {getStatusIcon(booking.status)}
                   <Badge 
                     variant={booking.status === 'Confirmed' ? 'default' : booking.status === 'Cancelled' ? 'destructive' : 'secondary'}
@@ -241,10 +260,10 @@ export default function BookingsPage() {
                   </Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 <Collapsible open={isExpanded} onOpenChange={() => toggleCard(booking.id)}>
                   <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                       {isExpanded ? (
                         <ChevronUp className="h-4 w-4" />
                       ) : (
@@ -255,7 +274,7 @@ export default function BookingsPage() {
                 </Collapsible>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -270,12 +289,12 @@ export default function BookingsPage() {
               </div>
             </div>
 
-            {/* Quick Info */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Quick Info - Stack on mobile, side-by-side on larger */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <User className="h-4 w-4 flex-shrink-0" />
                 <span 
-                  className="truncate text-sm"
+                  className="truncate"
                   style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
                 >
                   {booking.customer}
@@ -284,7 +303,7 @@ export default function BookingsPage() {
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Briefcase className="h-4 w-4 flex-shrink-0" />
                 <span 
-                  className="truncate text-sm"
+                  className="truncate"
                   style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
                 >
                   {booking.staff}
@@ -314,7 +333,7 @@ export default function BookingsPage() {
             {/* Expanded Details */}
             <Collapsible open={isExpanded} onOpenChange={() => toggleCard(booking.id)}>
               <CollapsibleContent className="space-y-3 pt-2 border-t border-border/40">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                   <div className="flex items-start gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
@@ -483,10 +502,102 @@ export default function BookingsPage() {
     )
   }
 
+  // Filters Component - Reusable for mobile drawer and desktop
+  const FiltersContent = ({ onClose }: { onClose?: () => void }) => (
+    <div className="flex flex-col gap-4">
+      {/* Search Bar */}
+      <div className="relative w-full">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
+        <Input
+          placeholder="Search bookings..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 lg:pl-12 h-11 lg:h-12"
+          style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+        />
+      </div>
+
+      {/* Filters Row */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-5">
+        {/* Date Filter */}
+        <Select 
+          value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'all'} 
+          onValueChange={(value) => {
+            if (value === 'all') {
+              setSelectedDate(null)
+            } else {
+              setSelectedDate(new Date(value))
+            }
+          }}
+        >
+          <SelectTrigger className="w-full sm:w-[200px] lg:w-[220px] h-11 lg:h-12">
+            <CalendarIcon className="mr-2 h-4 w-4 lg:h-5 lg:w-5" />
+            <SelectValue placeholder="Filter by date" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Dates</SelectItem>
+            {availableDates.map(dateStr => {
+              const date = new Date(dateStr)
+              return (
+                <SelectItem key={dateStr} value={dateStr}>
+                  {format(date, 'PPP')}
+                </SelectItem>
+              )
+            })}
+          </SelectContent>
+        </Select>
+
+        {/* Status Filter */}
+        <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as FilterStatus)}>
+          <SelectTrigger className="w-full sm:w-[180px] lg:w-[200px] h-11 lg:h-12">
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Status</SelectItem>
+            <SelectItem value="Confirmed">Confirmed</SelectItem>
+            <SelectItem value="Pending">Pending</SelectItem>
+            <SelectItem value="Cancelled">Cancelled</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {/* Sort Filter */}
+        <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
+          <SelectTrigger className="w-full sm:w-[180px] lg:w-[200px] h-11 lg:h-12">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="date-asc">Date (Oldest First)</SelectItem>
+            <SelectItem value="date-desc">Date (Newest First)</SelectItem>
+            <SelectItem value="customer-asc">Customer (A-Z)</SelectItem>
+            <SelectItem value="customer-desc">Customer (Z-A)</SelectItem>
+            <SelectItem value="service-asc">Service (A-Z)</SelectItem>
+            <SelectItem value="service-desc">Service (Z-A)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Clear Filters Button */}
+      {activeFiltersCount > 0 && (
+        <Button
+          variant="outline"
+          onClick={() => {
+            setSearchQuery('')
+            setStatusFilter('all')
+            setSelectedDate(null)
+            onClose?.()
+          }}
+          className="w-full sm:w-auto"
+        >
+          Clear All Filters
+        </Button>
+      )}
+    </div>
+  )
+
   // Skeleton Loader
   const AppointmentSkeleton = () => (
-    <Card className="border-border/60">
-      <CardContent className="p-4 sm:p-5 lg:p-6">
+    <Card className="border-border/60 w-full">
+      <CardContent className="p-4 sm:p-5 md:p-6">
         <div className="flex flex-col gap-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 space-y-2">
@@ -516,7 +627,8 @@ export default function BookingsPage() {
 
         {/* Filters Skeleton */}
         <section className="mb-4 sm:mb-6 md:mb-8 w-full">
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+          <Skeleton className="h-10 w-full mb-3" />
+          <div className="flex flex-col sm:flex-row gap-3">
             <Skeleton className="h-10 flex-1" />
             <Skeleton className="h-10 w-full sm:w-32" />
             <Skeleton className="h-10 w-full sm:w-32" />
@@ -537,14 +649,14 @@ export default function BookingsPage() {
 
   return (
     <div className="flex flex-col w-full max-w-none">
-      {/* Page Header Section */}
-      <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10 w-full">
-        <div className="flex flex-col gap-3 sm:gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+      {/* Page Header Section - Mobile First */}
+      <section className="mb-3 sm:mb-4 md:mb-6 lg:mb-8 w-full">
+        <div className="flex flex-col gap-2 sm:gap-3 lg:gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-3 lg:gap-4">
             <div className="flex-1 min-w-0">
               <h1 
-                className="font-bold font-headline text-foreground mb-2"
-                style={{ fontSize: 'clamp(1.75rem, 1.5rem + 1.5vw, 2.5rem)' }}
+                className="font-bold font-headline text-foreground mb-1 sm:mb-2"
+                style={{ fontSize: 'clamp(1.5rem, 1.25rem + 1vw, 2.5rem)' }}
               >
                 Bookings
               </h1>
@@ -582,110 +694,69 @@ export default function BookingsPage() {
         </div>
       </section>
 
-      {/* Search and Filter Section */}
-      <section className="mb-4 sm:mb-6 md:mb-8 w-full">
-        <div className="flex flex-col gap-3 sm:gap-4 lg:gap-5">
-          {/* Search Bar - Full Width */}
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
-            <Input
-              placeholder="Search bookings by customer, service, or staff..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 lg:pl-12 h-11 lg:h-12 text-base lg:text-lg"
-            />
-          </div>
-
-          {/* Filters Row - Optimized for Desktop */}
-          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-5">
-            {/* Date Filter */}
-            <Select 
-              value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'all'} 
-              onValueChange={(value) => {
-                if (value === 'all') {
-                  setSelectedDate(null)
-                } else {
-                  setSelectedDate(new Date(value))
-                }
-              }}
-            >
-              <SelectTrigger className="w-full sm:w-[200px] lg:w-[220px] h-11 lg:h-12">
-                <CalendarIcon className="mr-2 h-4 w-4 lg:h-5 lg:w-5" />
-                <SelectValue placeholder="Filter by date" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Dates</SelectItem>
-                {availableDates.map(dateStr => {
-                  const date = new Date(dateStr)
-                  return (
-                    <SelectItem key={dateStr} value={dateStr}>
-                      {format(date, 'PPP')}
-                    </SelectItem>
-                  )
-                })}
-              </SelectContent>
-            </Select>
-
-            {/* Status Filter */}
-            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as FilterStatus)}>
-              <SelectTrigger className="w-full sm:w-[180px] lg:w-[200px] h-11 lg:h-12">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="Confirmed">Confirmed</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Sort Filter */}
-            <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
-              <SelectTrigger className="w-full sm:w-[180px] lg:w-[200px] h-11 lg:h-12">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date-asc">Date (Oldest First)</SelectItem>
-                <SelectItem value="date-desc">Date (Newest First)</SelectItem>
-                <SelectItem value="customer-asc">Customer (A-Z)</SelectItem>
-                <SelectItem value="customer-desc">Customer (Z-A)</SelectItem>
-                <SelectItem value="service-asc">Service (A-Z)</SelectItem>
-                <SelectItem value="service-desc">Service (Z-A)</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* View Toggle - Mobile */}
-            <div className="flex lg:hidden items-center gap-2">
-              <div className="flex items-center gap-1 rounded-lg border-2 border-border/60 bg-muted/30 p-1 flex-1">
-                <Button
-                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('cards')}
-                  className="h-8 px-3 flex-1"
-                >
-                  <Grid3x3 className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="h-8 px-3 flex-1"
-                >
-                  <List className="h-4 w-4" />
-                </Button>
+      {/* Search and Filter Section - Mobile First */}
+      <section className="mb-3 sm:mb-4 md:mb-6 lg:mb-8 w-full">
+        {/* Mobile: Filters Button + View Toggle */}
+        <div className="flex items-center gap-2 mb-3 lg:hidden">
+          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="flex-1 h-11 justify-start">
+                <Filter className="mr-2 h-4 w-4" />
+                <span>Filters</span>
+                {activeFiltersCount > 0 && (
+                  <Badge variant="default" className="ml-2 h-5 w-5 rounded-full p-0 flex items-center justify-center">
+                    {activeFiltersCount}
+                  </Badge>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="top" className="h-auto max-h-[90vh] overflow-y-auto">
+              <SheetHeader>
+                <SheetTitle>Filters</SheetTitle>
+                <SheetDescription>
+                  Filter and search your bookings
+                </SheetDescription>
+              </SheetHeader>
+              <div className="mt-6">
+                <FiltersContent onClose={() => setFiltersOpen(false)} />
               </div>
-            </div>
+            </SheetContent>
+          </Sheet>
+          
+          {/* Mobile View Toggle */}
+          <div className="flex items-center gap-1 rounded-lg border-2 border-border/60 bg-muted/30 p-1">
+            <Button
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('cards')}
+              className="h-9 px-2"
+            >
+              <Grid3x3 className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewMode('table')}
+              className="h-9 px-2"
+            >
+              <List className="h-4 w-4" />
+            </Button>
           </div>
+        </div>
+
+        {/* Desktop: Always Visible Filters */}
+        <div className="hidden lg:block">
+          <FiltersContent />
         </div>
       </section>
 
-      {/* Bookings List Section */}
+      {/* Bookings List Section - Mobile First */}
       <section className="w-full">
         {filteredAndSortedBookings.length > 0 ? (
           viewMode === 'table' ? (
             <TableView />
           ) : (
-            <div className="flex flex-col gap-4 sm:gap-5 md:gap-6 lg:gap-8">
+            <div className="flex flex-col gap-3 sm:gap-4 md:gap-5 lg:gap-6 xl:gap-8">
               {/* Group by Date */}
               {groupedBookings.length > 0 ? (
                 groupedBookings.map(([dateKey, dateBookings]) => {
@@ -695,28 +766,28 @@ export default function BookingsPage() {
 
                   return (
                     <div key={dateKey} className="flex flex-col gap-3 sm:gap-4 lg:gap-5">
-                      {/* Date Header */}
-                      <div className={`flex items-center gap-3 px-4 sm:px-5 lg:px-6 py-3 lg:py-4 rounded-xl ${
+                      {/* Date Header - Mobile First */}
+                      <div className={`flex items-center gap-2 sm:gap-3 px-3 sm:px-4 lg:px-6 py-2 sm:py-3 lg:py-4 rounded-lg lg:rounded-xl ${
                         isTodayDate 
                           ? 'bg-primary/10 border-2 border-primary/20 shadow-3d-sm' 
                           : isPastDate
                           ? 'bg-muted/30 border border-border/40'
                           : 'bg-muted/20 border border-border/40'
                       }`}>
-                        <CalendarIcon className={`h-5 w-5 lg:h-6 lg:w-6 flex-shrink-0 ${
+                        <CalendarIcon className={`h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 flex-shrink-0 ${
                           isTodayDate ? 'text-primary' : 'text-muted-foreground'
                         }`} />
                         <div className="flex-1 min-w-0">
                           <h2 
-                            className={`font-semibold ${
+                            className={`font-semibold truncate ${
                               isTodayDate ? 'text-primary' : 'text-foreground'
                             }`}
-                            style={{ fontSize: 'clamp(1rem, 0.875rem + 0.5vw, 1.5rem)' }}
+                            style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1.5rem)' }}
                           >
                             {isTodayDate ? 'Today' : isPastDate ? 'Past' : format(date, 'EEEE, MMMM d, yyyy')}
                           </h2>
                           <p 
-                            className="text-muted-foreground"
+                            className="text-muted-foreground truncate"
                             style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
                           >
                             {dateBookings.length} appointment{dateBookings.length !== 1 ? 's' : ''}
@@ -724,7 +795,7 @@ export default function BookingsPage() {
                         </div>
                       </div>
 
-                      {/* Bookings Grid - Responsive Columns */}
+                      {/* Bookings Grid - Mobile First: Full Width, then Responsive Grid */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
                         {dateBookings.map((booking) => (
                           <AppointmentCard key={booking.id} booking={booking} />
@@ -744,16 +815,12 @@ export default function BookingsPage() {
           )
         ) : (
           <Card className="w-full border-border/60 bg-card/95 backdrop-blur-sm">
-            <CardContent className="p-12 sm:p-16 lg:p-20">
+            <CardContent className="p-8 sm:p-12 lg:p-16 xl:p-20">
               <div className="text-center text-muted-foreground">
-                <div className="flex flex-col items-center gap-4">
-                  <div className="rounded-full bg-muted/50 p-4">
+                <div className="flex flex-col items-center gap-3 sm:gap-4">
+                  <div className="rounded-full bg-muted/50 p-3 sm:p-4">
                     <CalendarIcon 
-                      className="h-12 w-12 sm:h-16 sm:w-16 opacity-50"
-                      style={{ 
-                        width: 'clamp(3rem, 2.5rem + 2vw, 4rem)',
-                        height: 'clamp(3rem, 2.5rem + 2vw, 4rem)'
-                      }}
+                      className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16 opacity-50"
                     />
                   </div>
                   <div className="flex flex-col gap-2">
