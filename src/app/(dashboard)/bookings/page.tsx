@@ -149,9 +149,9 @@ export default function BookingsPage() {
     }
   }
 
-  // Mobile: Horizontal Scrollable Date Picker
-  const MobileDatePicker = () => (
-    <div className="block lg:hidden w-full">
+  // Horizontal Scrollable Date Picker (Mobile & Web)
+  const HorizontalDatePicker = () => (
+    <div className="w-full">
       <div className="mb-4">
         <div className="flex items-center justify-between mb-3">
           <h3 
@@ -178,6 +178,15 @@ export default function BookingsPage() {
               variant="ghost"
               size="icon"
               className="h-8 w-8"
+              onClick={() => setDate(new Date())}
+              aria-label="Today"
+            >
+              <span className="text-xs">Today</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => {
                 if (date) {
                   setDate(addDays(date, 1))
@@ -190,11 +199,19 @@ export default function BookingsPage() {
           </div>
         </div>
       </div>
-      <div className="overflow-x-auto -mx-4 px-4 pb-2 scrollbar-hide">
-        <div className="flex gap-2 min-w-max">
+      <div 
+        className="w-full overflow-x-auto overflow-y-hidden scrollbar-hide pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8" 
+        style={{ 
+          scrollbarWidth: 'none', 
+          msOverflowStyle: 'none',
+          scrollBehavior: 'smooth',
+          WebkitOverflowScrolling: 'touch'
+        }}
+      >
+        <div className="flex gap-2 sm:gap-3 min-w-max">
           {loading ? (
-            Array.from({ length: 7 }).map((_, i) => (
-              <Skeleton key={i} className="h-[90px] w-[70px] rounded-xl flex-shrink-0" />
+            Array.from({ length: 21 }).map((_, i) => (
+              <Skeleton key={i} className="h-[90px] sm:h-[100px] w-[70px] sm:w-[80px] rounded-xl flex-shrink-0" />
             ))
           ) : (
             upcomingDates.map((day) => {
@@ -210,16 +227,16 @@ export default function BookingsPage() {
                   disabled={isPastDate}
                   aria-label={`Select ${format(day, 'EEEE, MMMM d')}${appointmentCount > 0 ? `, ${appointmentCount} appointment${appointmentCount !== 1 ? 's' : ''}` : ''}`}
                   aria-pressed={isSelected}
-                  className={`flex flex-col items-center justify-center gap-1.5 px-3 py-3 rounded-xl border-2 transition-all duration-200 min-w-[70px] touch-3d active:scale-95 ${
+                  className={`flex flex-col items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-xl border-2 transition-all duration-200 min-w-[70px] sm:min-w-[80px] flex-shrink-0 touch-3d active:scale-95 ${
                     isSelected
-                      ? 'border-primary bg-gradient-to-br from-primary to-primary/90 text-primary-foreground shadow-3d-md scale-105'
+                      ? 'border-primary bg-gradient-to-br from-primary to-primary/90 text-primary-foreground shadow-3d-md scale-105 z-10'
                       : isPastDate
                       ? 'border-border/40 bg-muted/30 text-muted-foreground opacity-50 cursor-not-allowed'
-                      : 'border-border/60 bg-card/95 text-foreground hover:border-primary/50 hover:shadow-3d-sm hover:bg-card'
+                      : 'border-border/60 bg-card/95 text-foreground hover:border-primary/50 hover:shadow-3d-sm hover:bg-card hover:scale-105'
                   }`}
                 >
                   <span 
-                    className={`font-medium ${isTodayDate && !isSelected ? 'text-primary font-semibold' : ''}`}
+                    className={`font-medium whitespace-nowrap ${isTodayDate && !isSelected ? 'text-primary font-semibold' : ''}`}
                     style={{ fontSize: 'clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem)' }}
                   >
                     {format(day, 'EEE')}
@@ -232,7 +249,7 @@ export default function BookingsPage() {
                   </span>
                   {appointmentCount > 0 && (
                     <span 
-                      className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                      className={`px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${
                         isSelected
                           ? 'bg-primary-foreground/20 text-primary-foreground'
                           : 'bg-primary/10 text-primary'
@@ -608,9 +625,9 @@ export default function BookingsPage() {
 
           {/* Appointments Section */}
           <div className="lg:col-span-3 w-full">
-            {/* Mobile Date Picker */}
-            <div className="mb-4 sm:mb-6 lg:hidden">
-              <MobileDatePicker />
+            {/* Horizontal Date Picker - Always visible, scrollable */}
+            <div className="mb-4 sm:mb-6">
+              <HorizontalDatePicker />
             </div>
 
             {/* Appointments Card */}
