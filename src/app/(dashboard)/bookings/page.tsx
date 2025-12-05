@@ -215,7 +215,7 @@ export default function BookingsPage() {
     return count
   }, [searchQuery, statusFilter, selectedDate])
 
-  // Enhanced Appointment Card Component - Mobile First
+  // Enhanced Appointment Card Component - Clean Single-Line Layout
   const AppointmentCard = ({ booking }: { booking: Booking }) => {
     const bookingDate = booking.dateTime instanceof Date ? booking.dateTime : new Date(booking.dateTime)
     const isPastBooking = isPast(bookingDate) && !isToday(bookingDate)
@@ -233,13 +233,13 @@ export default function BookingsPage() {
         }`}
       >
         <CardContent className="p-4 sm:p-5 md:p-6">
-          <div className="flex flex-col gap-3 sm:gap-4">
-            {/* Header: Service & Status */}
+          <div className="flex flex-col gap-3">
+            {/* Top Row: Service Name, Today Badge, Status, Actions */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <h3 
-                    className="font-bold text-foreground line-clamp-2"
+                    className="font-bold text-foreground break-words"
                     style={{ fontSize: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)' }}
                   >
                     {booking.service}
@@ -249,21 +249,19 @@ export default function BookingsPage() {
                       Today
                     </Badge>
                   )}
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  {getStatusIcon(booking.status)}
                   <Badge 
                     variant={booking.status === 'Confirmed' ? 'default' : booking.status === 'Cancelled' ? 'destructive' : 'secondary'}
-                    className="text-xs font-medium px-2 py-0.5"
+                    className="text-xs font-medium px-2 py-0.5 flex items-center gap-1 flex-shrink-0"
                   >
+                    {getStatusIcon(booking.status)}
                     {booking.status}
                   </Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <Collapsible open={isExpanded} onOpenChange={() => toggleCard(booking.id)}>
                   <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
                       {isExpanded ? (
                         <ChevronUp className="h-4 w-4" />
                       ) : (
@@ -274,7 +272,7 @@ export default function BookingsPage() {
                 </Collapsible>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 sm:h-9 sm:w-9">
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -289,51 +287,46 @@ export default function BookingsPage() {
               </div>
             </div>
 
-            {/* Quick Info - Stack on mobile, side-by-side on larger */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <User className="h-4 w-4 flex-shrink-0" />
+            {/* Details Row - Single line layout */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 border-t border-border/40">
+              {/* Customer */}
+              <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
+                <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span 
-                  className="truncate"
+                  className="font-medium text-foreground truncate"
                   style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
                 >
                   {booking.customer}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Briefcase className="h-4 w-4 flex-shrink-0" />
+
+              {/* Staff */}
+              <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
+                <Briefcase className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                 <span 
-                  className="truncate"
+                  className="font-medium text-foreground truncate"
                   style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
                 >
                   {booking.staff}
                 </span>
               </div>
-            </div>
 
-            {/* Date & Time - Always Visible */}
-            <div className="flex items-center gap-2 pt-2 border-t border-border/40">
-              <Clock className="h-4 w-4 text-primary flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p 
-                  className="font-semibold text-foreground"
+              {/* Date & Time */}
+              <div className="flex items-center gap-2 min-w-0 flex-1 sm:flex-initial">
+                <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+                <span 
+                  className="font-semibold text-foreground whitespace-nowrap"
                   style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
                 >
-                  {format(bookingDate, 'PPP')}
-                </p>
-                <p 
-                  className="text-muted-foreground font-medium"
-                  style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
-                >
-                  {format(bookingDate, 'p')}
-                </p>
+                  {format(bookingDate, 'MMM d')} • {format(bookingDate, 'p')}
+                </span>
               </div>
             </div>
 
             {/* Expanded Details */}
             <Collapsible open={isExpanded} onOpenChange={() => toggleCard(booking.id)}>
               <CollapsibleContent className="space-y-3 pt-2 border-t border-border/40">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-start gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
