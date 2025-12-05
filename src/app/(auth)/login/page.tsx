@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,7 +10,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Bot } from "lucide-react";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -24,9 +24,20 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col items-center justify-center p-4">
-      <div className="mb-8 flex items-center gap-2 text-2xl font-bold text-foreground">
-        <Bot size={28} />
-        <h1 className="font-headline">AI Receptionist</h1>
+      <div className="mb-8 flex flex-col items-center gap-3">
+        <div className="relative h-20 w-20 sm:h-24 sm:w-24">
+          <Image
+            src="/arlington-logo.png"
+            alt="The Arlington Estate Logo"
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
+        <h1 className="text-2xl sm:text-3xl font-bold font-headline text-foreground">
+          The Arlington Estate
+        </h1>
+        <p className="text-sm text-muted-foreground">An Event Experience</p>
       </div>
       <Card className="w-full max-w-sm">
         <CardHeader>

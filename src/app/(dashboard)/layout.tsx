@@ -1,18 +1,19 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
-  Bot,
   LayoutDashboard,
   MessageSquare,
-  Users,
   Briefcase,
   Calendar,
   AreaChart,
   Settings,
   PanelLeft,
-} from 'lucide-react';
+  Instagram,
+} from "lucide-react";
+
 import {
   SidebarProvider,
   Sidebar,
@@ -25,18 +26,34 @@ import {
   SidebarTrigger,
   SidebarInset,
   useSidebar,
-} from '@/components/ui/sidebar';
-import { UserNav } from '@/components/user-nav';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
+import { UserNav } from "@/components/user-nav";
 
 const navItems = [
-  { href: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/interactions', icon: MessageSquare, label: 'Interactions' },
-  { href: '/management', icon: Briefcase, label: 'Management' },
-  { href: '/bookings', icon: Calendar, label: 'Bookings' },
-  { href: '/analytics', icon: AreaChart, label: 'Analytics' },
-  { href: '/configuration', icon: Settings, label: 'Configuration' },
+  { href: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/interactions", icon: MessageSquare, label: "Interactions" },
+  { href: "/management", icon: Briefcase, label: "Management" },
+  { href: "/bookings", icon: Calendar, label: "Bookings" },
+  { href: "/analytics", icon: AreaChart, label: "Analytics" },
+  { href: "/configuration", icon: Settings, label: "Configuration" },
 ];
+
+function SidebarToggleButton() {
+  const { toggleSidebar } = useSidebar();
+  
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={toggleSidebar}
+      className="h-8 w-8 rounded-lg hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-all duration-200"
+      aria-label="Toggle Sidebar"
+    >
+      <PanelLeft className="h-4 w-4" />
+    </Button>
+  );
+}
 
 export default function DashboardLayout({
   children,
@@ -47,45 +64,126 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
-        <Sidebar collapsible="icon" className="border-r">
-          <SidebarHeader>
-            <Link href="/" className="flex items-center gap-2">
-              <Bot className="text-primary" size={24} />
-              <span className="text-lg font-semibold font-headline">AI Receptionist</span>
-            </Link>
+      <div className="flex min-h-screen bg-background">
+        <Sidebar collapsible="offcanvas" className="hidden border-r border-border/40 bg-gradient-to-b from-sidebar via-sidebar to-sidebar/95 backdrop-blur-xl shadow-3d-lg md:flex transition-all duration-200 ease-linear">
+          <SidebarHeader className="px-4 pb-4 pt-5">
+            <div className="flex items-center justify-between gap-2">
+              <Link href="/" className="flex items-center gap-2 flex-1 min-w-0 group">
+                <div className="relative h-10 w-10 flex-shrink-0">
+                  <Image
+                    src="/arlington-logo.png"
+                    alt="The Arlington Estate Logo"
+                    fill
+                    className="object-contain transition-transform duration-200 group-hover:scale-105"
+                    priority
+                  />
+                </div>
+                <span className="text-base font-semibold font-headline truncate">
+                  Arlington Estate
+                </span>
+              </Link>
+              <SidebarToggleButton />
+            </div>
           </SidebarHeader>
+
           <SidebarContent>
-            <SidebarMenu>
-              {navItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={pathname === item.href}
-                    tooltip={item.label}
-                  >
-                    <Link href={item.href}>
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+            <SidebarMenu className="px-2">
+              {navItems.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== "/" && pathname.startsWith(item.href));
+                return (
+                  <SidebarMenuItem key={item.href}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive}
+                      tooltip={item.label}
+                      className="rounded-xl text-sm min-h-[48px] transition-all duration-200 transform-gpu data-[active=true]:bg-gradient-to-r data-[active=true]:from-primary/15 data-[active=true]:to-accent/10 data-[active=true]:text-primary data-[active=true]:shadow-3d-sm data-[active=true]:border-l-4 data-[active=true]:border-primary hover:scale-[1.02] hover:shadow-3d-sm active:scale-[0.98] touch-3d"
+                    >
+                      <Link href={item.href}>
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarContent>
-          <SidebarFooter>
-            {/* Can add footer content here */}
+
+          <SidebarFooter className="px-4 pb-4 pt-2 mt-auto">
+            <div className="flex flex-col gap-2">
+              <div className="h-px bg-sidebar-border/50 w-full" />
+              <div className="flex flex-col gap-1.5">
+                <p className="text-xs text-sidebar-foreground/70 text-center">
+                  Product by{" "}
+                  <a
+                    href="https://www.instagram.com/sellayadigital"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-sidebar-foreground hover:text-primary transition-colors duration-200 font-medium group"
+                  >
+                    <span>Sellaya</span>
+                    <Instagram className="h-3 w-3 opacity-70 group-hover:opacity-100 transition-opacity" />
+                  </a>
+                </p>
+              </div>
+            </div>
           </SidebarFooter>
         </Sidebar>
+
         <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
-            <SidebarTrigger className="md:hidden" />
-            <div className="flex-1">
-              {/* Breadcrumbs or page title could go here */}
+          {/* Mobile top bar */}
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/40 bg-gradient-to-r from-background/95 via-background/90 to-background/95 px-3 backdrop-blur-xl shadow-3d-md sm:h-16 sm:px-5">
+            <div className="flex items-center gap-2">
+              <SidebarTrigger className="md:hidden" />
+              <div className="flex items-center gap-2 md:hidden">
+                <div className="relative h-8 w-8 flex-shrink-0">
+                  <Image
+                    src="/arlington-logo.png"
+                    alt="The Arlington Estate Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold">Arlington Estate</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Micro-SaaS control center
+                  </span>
+                </div>
+              </div>
+              {/* Desktop toggle button */}
+              <div className="hidden md:flex items-center gap-2">
+                <SidebarToggleButton />
+                <div className="relative h-8 w-8 flex-shrink-0">
+                  <Image
+                    src="/arlington-logo.png"
+                    alt="The Arlington Estate Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-semibold">Arlington Estate</span>
+                  <span className="text-[11px] text-muted-foreground">
+                    Micro-SaaS control center
+                  </span>
+                </div>
+              </div>
             </div>
-            <UserNav />
+            <div className="ml-auto flex items-center gap-2">
+              <UserNav />
+            </div>
           </header>
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+
+          <main className="flex-1 px-3 pb-6 pt-4 sm:px-5 sm:pt-6 lg:px-8 lg:pt-8 xl:px-12">
+            <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6 lg:gap-8 xl:gap-10">
+              {children}
+            </div>
+          </main>
         </SidebarInset>
       </div>
     </SidebarProvider>
