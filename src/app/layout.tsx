@@ -32,10 +32,10 @@ export default function RootLayout({
           content="width=device-width, initial-scale=1, viewport-fit=cover"
         />
       </head>
-      <body className="font-body bg-background text-foreground antialiased min-h-screen">
+      <body className="font-body bg-background text-foreground antialiased min-h-screen w-full">
         <ThemeProvider>
           {/* Mobile-first app shell */}
-          <div className="flex min-h-screen flex-col">
+          <div className="flex min-h-screen w-full flex-col">
             {children}
             <Toaster />
           </div>

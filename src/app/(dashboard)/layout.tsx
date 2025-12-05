@@ -64,7 +64,7 @@ export default function DashboardLayout({
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen bg-background">
+      <div className="flex min-h-screen w-full bg-background">
         <Sidebar collapsible="offcanvas" className="hidden border-r border-border/40 bg-gradient-to-b from-sidebar via-sidebar to-sidebar/95 backdrop-blur-xl shadow-3d-lg md:flex transition-all duration-200 ease-linear">
           <SidebarHeader className="px-4 pb-4 pt-5">
             <div className="flex items-center justify-between gap-2">
@@ -132,12 +132,12 @@ export default function DashboardLayout({
           </SidebarFooter>
         </Sidebar>
 
-        <SidebarInset>
+        <SidebarInset className="w-full max-w-none">
           {/* Mobile top bar */}
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/40 bg-gradient-to-r from-background/95 via-background/90 to-background/95 px-3 backdrop-blur-xl shadow-3d-md sm:h-16 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="md:hidden" />
-              <div className="flex items-center gap-2 md:hidden">
+          <header className="sticky top-0 z-20 flex h-14 w-full items-center gap-3 border-b border-border/40 bg-gradient-to-r from-background/95 via-background/90 to-background/95 px-3 backdrop-blur-xl shadow-3d-md sm:h-16 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <SidebarTrigger className="md:hidden flex-shrink-0" />
+              <div className="flex items-center gap-2 md:hidden flex-1 min-w-0">
                 <div className="relative h-8 w-8 flex-shrink-0">
                   <Image
                     src="/arlington-logo.png"
@@ -147,15 +147,15 @@ export default function DashboardLayout({
                     priority
                   />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold">Arlington Estate</span>
-                  <span className="text-[11px] text-muted-foreground">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-semibold truncate">Arlington Estate</span>
+                  <span className="text-[11px] text-muted-foreground truncate">
                     Micro-SaaS control center
                   </span>
                 </div>
               </div>
               {/* Desktop toggle button */}
-              <div className="hidden md:flex items-center gap-2">
+              <div className="hidden md:flex items-center gap-2 flex-1 min-w-0">
                 <SidebarToggleButton />
                 <div className="relative h-8 w-8 flex-shrink-0">
                   <Image
@@ -166,21 +166,21 @@ export default function DashboardLayout({
                     priority
                   />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-semibold">Arlington Estate</span>
-                  <span className="text-[11px] text-muted-foreground">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-semibold truncate">Arlington Estate</span>
+                  <span className="text-[11px] text-muted-foreground truncate">
                     Micro-SaaS control center
                   </span>
                 </div>
               </div>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+            <div className="ml-auto flex items-center gap-2 flex-shrink-0">
               <UserNav />
             </div>
           </header>
 
-          <main className="flex-1 px-3 pb-20 pt-4 sm:px-4 sm:pb-8 sm:pt-6 md:px-6 md:pb-10 md:pt-8 lg:px-8 lg:pb-12 lg:pt-10 xl:px-10 xl:pb-14 xl:pt-12 2xl:px-12 2xl:pb-16 2xl:pt-14">
-            <div className="mx-auto flex w-full flex-col gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 2xl:gap-10" style={{ maxWidth: '100%' }}>
+          <main className="flex-1 w-full max-w-none px-3 pb-20 pt-4 sm:px-4 sm:pb-8 sm:pt-6 md:px-6 md:pb-10 md:pt-8 lg:px-8 lg:pb-12 lg:pt-10 xl:px-10 xl:pb-14 xl:pt-12 2xl:px-12 2xl:pb-16 2xl:pt-14">
+            <div className="flex w-full max-w-none flex-col gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 2xl:gap-10">
               {children}
             </div>
           </main>

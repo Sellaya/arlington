@@ -48,7 +48,12 @@ export default function InteractionsPage() {
     fetch('/api/data')
       .then(res => res.json())
       .then(data => {
-        setInteractions(data.interactions || []);
+        // Convert timestamp strings back to Date objects
+        const processedInteractions = (data.interactions || []).map((interaction: any) => ({
+          ...interaction,
+          timestamp: interaction.timestamp ? new Date(interaction.timestamp) : new Date(),
+        }));
+        setInteractions(processedInteractions);
         setLoading(false);
       })
       .catch(err => {
@@ -71,7 +76,9 @@ export default function InteractionsPage() {
           comparison = a.customer.name.localeCompare(b.customer.name);
           break;
         case 'timestamp':
-          comparison = a.timestamp.getTime() - b.timestamp.getTime();
+          const aTime = a.timestamp instanceof Date ? a.timestamp.getTime() : new Date(a.timestamp).getTime();
+          const bTime = b.timestamp instanceof Date ? b.timestamp.getTime() : new Date(b.timestamp).getTime();
+          comparison = aTime - bTime;
           break;
         case 'status':
           comparison = a.status.localeCompare(b.status);

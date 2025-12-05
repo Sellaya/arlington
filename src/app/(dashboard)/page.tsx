@@ -39,9 +39,9 @@ export default async function DashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full max-w-none">
       {/* Page Header Section */}
-      <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10">
+      <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10 w-full">
         <div className="flex flex-col gap-2 sm:gap-3">
           <h1 
             className="font-bold font-headline text-foreground"
@@ -59,8 +59,8 @@ export default async function DashboardPage() {
       </section>
 
       {/* KPI Cards Section - Mobile-first Grid */}
-      <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+      <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5 lg:gap-6 w-full">
           {kpiData.map((kpi, index) => (
             <Card 
               key={kpi.title}
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
       </section>
 
       {/* Live Activity Feed Section */}
-      <section>
+      <section className="w-full">
         <Card className="w-full border-border/60 bg-card/95 backdrop-blur-sm">
           <CardHeader className="pb-4 sm:pb-5 md:pb-6">
             <div className="flex flex-col gap-1 sm:gap-2">
@@ -128,10 +128,10 @@ export default async function DashboardPage() {
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="p-0 sm:p-4 md:p-6 lg:p-8">
+          <CardContent className="p-0 sm:p-4 md:p-6 lg:p-8 w-full overflow-hidden">
             {/* Mobile: Vertical List */}
-            <div className="block sm:hidden">
-              <div className="flex flex-col divide-y divide-border/60">
+            <div className="block sm:hidden w-full">
+              <div className="flex flex-col divide-y divide-border/60 w-full">
                 {interactions.slice(0, 10).map((interaction) => (
                   <div 
                     key={interaction.id}
@@ -190,9 +190,9 @@ export default async function DashboardPage() {
             </div>
 
             {/* Tablet: 2-Column Table */}
-            <div className="hidden sm:block lg:hidden">
-              <div className="overflow-x-auto -mx-4 sm:-mx-4 md:-mx-6">
-                <div className="inline-block min-w-full align-middle px-4 sm:px-4 md:px-6">
+            <div className="hidden sm:block lg:hidden w-full">
+              <div className="w-full overflow-hidden">
+                <div className="w-full">
                   <Table className="w-full">
                     <TableHeader>
                       <TableRow className="border-border/60">
@@ -266,9 +266,9 @@ export default async function DashboardPage() {
             </div>
 
             {/* Desktop: Full Table */}
-            <div className="hidden lg:block">
-              <div className="overflow-x-auto -mx-4 sm:-mx-5 md:-mx-6 lg:-mx-8">
-                <div className="inline-block min-w-full align-middle px-4 sm:px-5 md:px-6 lg:px-8">
+            <div className="hidden lg:block w-full">
+              <div className="w-full overflow-hidden">
+                <div className="w-full">
                   <Table className="w-full">
                     <TableHeader>
                       <TableRow className="border-border/60">
