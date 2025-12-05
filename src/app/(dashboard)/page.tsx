@@ -81,10 +81,10 @@ export default async function DashboardPage() {
             An overview of the most recent interactions.
           </CardDescription>
         </CardHeader>
-        <CardContent className="lg:p-6">
-          <div className="overflow-x-auto -mx-4 sm:mx-0 lg:mx-0">
-            <div className="inline-block min-w-full align-middle px-4 sm:px-0">
-              <Table>
+        <CardContent className="p-4 sm:p-5 md:p-6 lg:p-8">
+          <div className="overflow-x-auto -mx-4 sm:-mx-5 md:-mx-6 lg:-mx-8">
+            <div className="inline-block min-w-full align-middle px-4 sm:px-5 md:px-6 lg:px-8">
+              <Table className="w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[200px] lg:min-w-[250px]">Customer</TableHead>

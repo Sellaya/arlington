@@ -182,8 +182,8 @@ export default function InteractionsPage() {
         </TabsList>
         <TabsContent value="calls" className="mt-4 sm:mt-6 lg:mt-8">
           {calls.length > 0 ? (
-            <div className="overflow-x-auto -mx-4 sm:mx-0 lg:mx-0">
-              <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+            <div className="overflow-x-auto -mx-4 sm:-mx-5 md:-mx-6 lg:-mx-8">
+              <div className="inline-block min-w-full align-middle px-4 sm:px-5 md:px-6 lg:px-8">
                 {renderTable(calls)}
               </div>
             </div>
@@ -194,10 +194,10 @@ export default function InteractionsPage() {
             </div>
           )}
         </TabsContent>
-        <TabsContent value="chats" className="mt-4 sm:mt-6">
+        <TabsContent value="chats" className="mt-4 sm:mt-6 lg:mt-8">
           {chats.length > 0 ? (
-            <div className="overflow-x-auto -mx-4 sm:mx-0">
-              <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+            <div className="overflow-x-auto -mx-4 sm:-mx-5 md:-mx-6 lg:-mx-8">
+              <div className="inline-block min-w-full align-middle px-4 sm:px-5 md:px-6 lg:px-8">
                 {renderTable(chats)}
               </div>
             </div>

@@ -80,7 +80,7 @@ export default function ConfigurationPage() {
                         Basic information about your business.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4 sm:space-y-6 lg:space-y-8 lg:p-6">
+                <CardContent className="space-y-4 sm:space-y-6 lg:space-y-8 p-4 sm:p-5 md:p-6 lg:p-8">
                     <FormField
                         control={form.control}
                         name="businessName"
@@ -125,7 +125,7 @@ export default function ConfigurationPage() {
                         Where your AI receptionist will be active.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-3 sm:space-y-4 lg:space-y-6 lg:p-6">
+                <CardContent className="space-y-3 sm:space-y-4 lg:space-y-6 p-4 sm:p-5 md:p-6 lg:p-8">
                     <FormField
                         control={form.control}
                         name="channels"
@@ -181,7 +181,7 @@ export default function ConfigurationPage() {
                         Define when to hand over to a human agent.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="lg:p-6">
+                <CardContent className="p-4 sm:p-5 md:p-6 lg:p-8">
                      <FormField
                         control={form.control}
                         name="escalationKeywords"

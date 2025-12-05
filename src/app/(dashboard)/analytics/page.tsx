@@ -77,10 +77,10 @@ export default function AnalyticsPage() {
                         <CardTitle className="text-base sm:text-lg lg:text-xl xl:text-2xl">Call & Chat Volume</CardTitle>
                         <CardDescription className="text-xs sm:text-sm lg:text-base">Last 7 days</CardDescription>
                     </CardHeader>
-                    <CardContent className="lg:p-6">
+                    <CardContent className="p-4 sm:p-5 md:p-6 lg:p-8">
                         <ChartContainer 
                             config={{ calls: { label: "Calls" }, chats: { label: "Chats" } }} 
-                            className="h-64 sm:h-80 lg:h-96 xl:h-[450px] w-full"
+                            className="h-64 sm:h-80 md:h-96 lg:h-[400px] xl:h-[450px] 2xl:h-[500px] w-full"
                         >
                             <BarChart data={analyticsData.volume}>
                                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
@@ -107,10 +107,10 @@ export default function AnalyticsPage() {
                         <CardTitle className="text-base sm:text-lg lg:text-xl xl:text-2xl">Conversion Rate</CardTitle>
                         <CardDescription className="text-xs sm:text-sm lg:text-base">Weekly trend</CardDescription>
                     </CardHeader>
-                    <CardContent className="lg:p-6">
+                    <CardContent className="p-4 sm:p-5 md:p-6 lg:p-8">
                         <ChartContainer 
                             config={{ rate: { label: "Conversion Rate" } }} 
-                            className="h-64 sm:h-80 lg:h-96 xl:h-[450px] w-full"
+                            className="h-64 sm:h-80 md:h-96 lg:h-[400px] xl:h-[450px] 2xl:h-[500px] w-full"
                         >
                             <LineChart data={analyticsData.conversion}>
                                 <CartesianGrid vertical={false} strokeDasharray="3 3" />

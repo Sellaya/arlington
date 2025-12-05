@@ -134,7 +134,7 @@ export default function DashboardLayout({
 
         <SidebarInset>
           {/* Mobile top bar */}
-          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/40 bg-gradient-to-r from-background/95 via-background/90 to-background/95 px-3 backdrop-blur-xl shadow-3d-md sm:h-16 sm:px-5">
+          <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-border/40 bg-gradient-to-r from-background/95 via-background/90 to-background/95 px-3 backdrop-blur-xl shadow-3d-md sm:h-16 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="md:hidden" />
               <div className="flex items-center gap-2 md:hidden">
@@ -179,8 +179,8 @@ export default function DashboardLayout({
             </div>
           </header>
 
-          <main className="flex-1 px-3 pb-6 pt-4 sm:px-5 sm:pt-6 lg:px-8 lg:pt-8 xl:px-12">
-            <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 sm:gap-6 lg:gap-8 xl:gap-10">
+          <main className="flex-1 px-3 pb-6 pt-4 sm:px-4 sm:pb-8 sm:pt-6 md:px-6 md:pb-10 md:pt-8 lg:px-8 lg:pb-12 lg:pt-10 xl:px-10 xl:pb-14 xl:pt-12 2xl:px-12 2xl:pb-16 2xl:pt-14">
+            <div className="mx-auto flex w-full flex-col gap-4 sm:gap-5 md:gap-6 lg:gap-7 xl:gap-8 2xl:gap-10" style={{ maxWidth: '100%' }}>
               {children}
             </div>
           </main>
