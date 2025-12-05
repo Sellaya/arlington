@@ -310,3 +310,4 @@ Potential improvements:
 - All calculations are real-time based on current data
 - Revenue is estimated, not actual (unless integrated with payment system)
 
+

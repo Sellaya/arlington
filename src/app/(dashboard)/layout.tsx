@@ -31,6 +31,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { UserNav } from "@/components/user-nav";
 import { GlobalSearch } from "@/components/global-search";
+import { AppFooter } from "@/components/app-footer";
 
 const navItems = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -165,9 +166,6 @@ export default function DashboardLayout({
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-semibold truncate">Arlington Estate</span>
-                  <span className="text-[11px] text-muted-foreground truncate">
-                    Micro-SaaS control center
-                  </span>
                 </div>
               </div>
               {/* Desktop toggle button */}
@@ -184,9 +182,6 @@ export default function DashboardLayout({
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-semibold truncate">Arlington Estate</span>
-                  <span className="text-[11px] text-muted-foreground truncate">
-                    Micro-SaaS control center
-                  </span>
                 </div>
               </div>
             </div>
@@ -200,6 +195,9 @@ export default function DashboardLayout({
               {children}
             </div>
           </main>
+
+          {/* Footer */}
+          <AppFooter />
 
           {/* Mobile Bottom Navigation */}
           <nav 
