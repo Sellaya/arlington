@@ -332,3 +332,5 @@ bg-background/95 backdrop-blur-sm"
 9. **Recurring Appointments**: Support for recurring bookings
 10. **Time Slots**: Visual time slot availability
 
+
+

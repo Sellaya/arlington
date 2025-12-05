@@ -25,3 +25,5 @@ If you have the logo in a different format, you can:
 
 The application will automatically detect and use the logo once placed in this directory.
 
+
+

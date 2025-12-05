@@ -169,3 +169,5 @@ All components automatically adapt to dark mode:
 - [x] Proper visual hierarchy
 - [x] Smooth animations and transitions
 
+
+

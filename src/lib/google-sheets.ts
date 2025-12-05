@@ -100,8 +100,13 @@ function parseInteractionsFromRows(rows: string[][]): Interaction[] {
       const email = row[1]?.trim() || '';
       const phone = row[2]?.trim() || '';
       const eventType = row[3]?.trim() || '';
-      const callSummary = row[8]?.trim() || '';
+      const eventDescription = row[4]?.trim() || '';
+      const headcountStr = row[5]?.trim() || '';
       const callId = row[6]?.trim() || '';
+      const callSummary = row[8]?.trim() || '';
+      
+      // Parse headcount if available
+      const headcount = headcountStr ? parseInt(headcountStr, 10) : undefined;
       
       // Generate avatar from name
       const avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&size=40`;
@@ -132,6 +137,10 @@ function parseInteractionsFromRows(rows: string[][]): Interaction[] {
         channel: 'Call' as 'Call' | 'Chat', // All are calls based on the sheet
         transcript: callSummary,
         tags: tags,
+        // Additional context for AI processing
+        eventType: eventType || undefined,
+        eventDescription: eventDescription || undefined,
+        headcount: isNaN(headcount as number) ? undefined : headcount,
       };
     });
 }

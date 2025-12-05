@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Phone, MessageSquare, UserPlus, CalendarPlus } from 'lucide-react';
 import { fetchInteractions, fetchLeads, fetchBookings } from '@/lib/google-sheets';
 import { formatDistanceToNow } from 'date-fns';
+import { ManagerDigestCard } from '@/components/manager-digest';
 
 export default async function DashboardPage() {
   const [interactions, leads, bookings] = await Promise.all([
@@ -108,6 +109,15 @@ export default async function DashboardPage() {
             </Card>
           ))}
         </div>
+      </section>
+
+      {/* Manager Digest Section */}
+      <section className="mb-4 sm:mb-6 md:mb-8 lg:mb-10 w-full">
+        <ManagerDigestCard 
+          interactions={interactions}
+          leads={leads}
+          bookings={bookings}
+        />
       </section>
 
       {/* Live Activity Feed Section */}

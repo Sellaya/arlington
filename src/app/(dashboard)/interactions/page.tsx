@@ -31,18 +31,45 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
 import type { Interaction } from '@/lib/types';
 import { format, formatDistanceToNow } from 'date-fns';
-import { Filter, Phone, MessageSquare, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Filter, Phone, MessageSquare, ArrowUpDown, ArrowUp, ArrowDown, Sparkles, Lightbulb, Mail, MessageSquareMore, Copy, Check } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { SavedFilters } from '@/components/saved-filters';
+import { getSavedFilters, getDefaultView, getCurrentUserRole, type FilterType } from '@/lib/filter-service';
 
 type SortField = 'customer' | 'timestamp' | 'status';
 type SortDirection = 'asc' | 'desc';
 
 export default function InteractionsPage() {
+  const { toast } = useToast();
   const [selectedInteraction, setSelectedInteraction] = React.useState<Interaction | null>(null);
   const [interactions, setInteractions] = React.useState<Interaction[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [activeTab, setActiveTab] = React.useState<'calls' | 'chats'>('calls');
   const [sortField, setSortField] = React.useState<SortField>('timestamp');
   const [sortDirection, setSortDirection] = React.useState<SortDirection>('desc');
+  
+  // Filter state
+  const [activeFilters, setActiveFilters] = React.useState<Record<string, any>>({
+    status: 'all',
+    channel: 'all',
+    dateRange: 'all',
+  });
+
+  // Apply default view on mount
+  React.useEffect(() => {
+    const role = getCurrentUserRole();
+    const defaultView = getDefaultView(role, 'interactions' as FilterType);
+    if (defaultView) {
+      setActiveFilters(defaultView.filters);
+    }
+  }, []);
+
+  // AI-generated data state
+  const [intentTags, setIntentTags] = React.useState<any>(null);
+  const [nextAction, setNextAction] = React.useState<any>(null);
+  const [followUpDraft, setFollowUpDraft] = React.useState<any>(null);
+  const [loadingAI, setLoadingAI] = React.useState(false);
+  const [copied, setCopied] = React.useState(false);
 
   React.useEffect(() => {
     fetch('/api/data')
@@ -62,8 +89,126 @@ export default function InteractionsPage() {
       });
   }, []);
 
-  const calls = interactions.filter((i) => i.channel === 'Call');
-  const chats = interactions.filter((i) => i.channel === 'Chat');
+  // Load AI data when interaction is selected
+  React.useEffect(() => {
+    if (selectedInteraction) {
+      setLoadingAI(true);
+      setIntentTags(null);
+      setNextAction(null);
+      setFollowUpDraft(null);
+      
+      // Fetch intent tags and next action in parallel
+      Promise.all([
+        fetch('/api/ai/intent-tags', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            interaction: selectedInteraction,
+            eventType: selectedInteraction.eventType,
+            eventDescription: selectedInteraction.eventDescription,
+          }),
+        }).then(res => res.json()).catch(() => null),
+        fetch('/api/ai/next-action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            interaction: selectedInteraction,
+            eventType: selectedInteraction.eventType,
+            headcount: selectedInteraction.headcount,
+          }),
+        }).then(res => res.json()).catch(() => null),
+      ]).then(([tags, action]) => {
+        setIntentTags(tags);
+        setNextAction(action);
+        setLoadingAI(false);
+      }).catch(() => {
+        setLoadingAI(false);
+      });
+    }
+  }, [selectedInteraction]);
+
+  const handleGenerateFollowUp = async (type: 'email' | 'sms') => {
+    if (!selectedInteraction) return;
+    
+    setLoadingAI(true);
+    try {
+      const response = await fetch('/api/ai/follow-up', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          interaction: selectedInteraction,
+          type,
+          nextAction,
+        }),
+      });
+      const draft = await response.json();
+      setFollowUpDraft(draft);
+    } catch (error) {
+      console.error('Error generating follow-up:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to generate follow-up draft',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
+  const handleCopyDraft = () => {
+    if (followUpDraft) {
+      const text = followUpDraft.type === 'email' 
+        ? `Subject: ${followUpDraft.subject}\n\n${followUpDraft.message}`
+        : followUpDraft.message;
+      navigator.clipboard.writeText(text);
+      setCopied(true);
+      toast({
+        title: 'Copied!',
+        description: 'Follow-up draft copied to clipboard',
+      });
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  // Apply filters
+  const filteredInteractions = React.useMemo(() => {
+    let filtered = [...interactions];
+
+    // Status filter
+    if (activeFilters.status && activeFilters.status !== 'all') {
+      filtered = filtered.filter(i => i.status === activeFilters.status);
+    }
+
+    // Channel filter
+    if (activeFilters.channel && activeFilters.channel !== 'all') {
+      filtered = filtered.filter(i => i.channel === activeFilters.channel);
+    }
+
+    // Date range filter
+    if (activeFilters.dateRange && activeFilters.dateRange !== 'all') {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      
+      if (activeFilters.dateRange === 'today') {
+        filtered = filtered.filter(i => {
+          const date = i.timestamp instanceof Date ? i.timestamp : new Date(i.timestamp);
+          return date >= today;
+        });
+      } else if (activeFilters.dateRange === 'week') {
+        const weekAgo = new Date(today);
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        filtered = filtered.filter(i => {
+          const date = i.timestamp instanceof Date ? i.timestamp : new Date(i.timestamp);
+          return date >= weekAgo;
+        });
+      }
+    }
+
+    return filtered;
+  }, [interactions, activeFilters]);
+
+  const calls = filteredInteractions.filter((i) => i.channel === 'Call');
+  const chats = filteredInteractions.filter((i) => i.channel === 'Chat');
   const currentData = activeTab === 'calls' ? calls : chats;
 
   // Sorting logic
@@ -424,35 +569,11 @@ export default function InteractionsPage() {
             </p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="w-full sm:w-auto"
-                  style={{ 
-                    fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)',
-                    height: 'clamp(2.25rem, 2rem + 0.5vw, 2.75rem)'
-                  }}
-                >
-                  <Filter 
-                    style={{ 
-                      width: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)',
-                      height: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)'
-                    }}
-                    className="mr-2"
-                  />
-                  <span className="hidden sm:inline">Filter</span>
-                  <span className="sm:hidden">Filter</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end">
-                <DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuCheckboxItem>Completed</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>Missed</DropdownMenuCheckboxItem>
-                <DropdownMenuCheckboxItem>In Progress</DropdownMenuCheckboxItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <SavedFilters
+              type="interactions"
+              currentFilters={activeFilters}
+              onApplyFilter={setActiveFilters}
+            />
           </div>
         </div>
       </section>
@@ -664,6 +785,134 @@ export default function InteractionsPage() {
                     </p>
                   </div>
                 </div>
+                {/* AI Intent Tags */}
+                {loadingAI && !intentTags ? (
+                  <div className="flex flex-col space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-8 w-full" />
+                  </div>
+                ) : intentTags ? (
+                  <div className="flex flex-col space-y-2 lg:space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-primary" />
+                      <p 
+                        className="font-medium text-muted-foreground"
+                        style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                      >
+                        AI Intent & Topics
+                      </p>
+                    </div>
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
+                      <div>
+                        <p className="text-sm font-semibold text-foreground mb-2">
+                          {intentTags.primaryIntent}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {intentTags.topics?.map((topic: string, idx: number) => (
+                            <Badge key={idx} variant="default" className="text-xs">
+                              {topic}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <span>Urgency: <strong className="text-foreground">{intentTags.urgency}</strong></span>
+                        <span>Confidence: <strong className="text-foreground">{intentTags.confidence}%</strong></span>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Next Best Action */}
+                {nextAction ? (
+                  <div className="flex flex-col space-y-2 lg:space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="h-4 w-4 text-primary" />
+                      <p 
+                        className="font-medium text-muted-foreground"
+                        style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                      >
+                        Next Best Action
+                      </p>
+                    </div>
+                    <div className={`bg-${nextAction.priority === 'high' ? 'destructive' : nextAction.priority === 'medium' ? 'primary' : 'muted'}/10 border border-${nextAction.priority === 'high' ? 'destructive' : nextAction.priority === 'medium' ? 'primary' : 'border'}/20 rounded-lg p-4`}>
+                      <p className="font-semibold text-foreground mb-1">
+                        {nextAction.action}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {nextAction.reason}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Follow-up Draft Section */}
+                <div className="flex flex-col space-y-2 lg:space-y-3">
+                  <p 
+                    className="font-medium text-muted-foreground"
+                    style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                  >
+                    Follow-up Actions
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={() => handleGenerateFollowUp('email')}
+                      disabled={loadingAI}
+                      className="flex-1"
+                    >
+                      <Mail className="h-4 w-4 mr-2" />
+                      Generate Email
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => handleGenerateFollowUp('sms')}
+                      disabled={loadingAI}
+                      className="flex-1"
+                    >
+                      <MessageSquareMore className="h-4 w-4 mr-2" />
+                      Generate SMS
+                    </Button>
+                  </div>
+                  {followUpDraft && (
+                    <div className="bg-muted/50 border border-border rounded-lg p-4 space-y-3">
+                      {followUpDraft.type === 'email' && followUpDraft.subject && (
+                        <div>
+                          <p className="text-xs font-medium text-muted-foreground mb-1">Subject:</p>
+                          <p className="text-sm font-semibold">{followUpDraft.subject}</p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-1">Message:</p>
+                        <p className="text-sm whitespace-pre-wrap">{followUpDraft.message}</p>
+                      </div>
+                      <div className="flex items-center justify-between pt-2 border-t border-border">
+                        <span className="text-xs text-muted-foreground">
+                          Suggested: {followUpDraft.suggestedTiming}
+                        </span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={handleCopyDraft}
+                          className="h-8"
+                        >
+                          {copied ? (
+                            <>
+                              <Check className="h-3 w-3 mr-1" />
+                              Copied
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="h-3 w-3 mr-1" />
+                              Copy
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex flex-col space-y-2 lg:space-y-3">
                   <p 
                     className="font-medium text-muted-foreground"

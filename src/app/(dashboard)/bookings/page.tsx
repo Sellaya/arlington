@@ -60,17 +60,41 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { useToast } from "@/hooks/use-toast"
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { SavedFilters } from "@/components/saved-filters"
+import { getDefaultView, getCurrentUserRole, type FilterType } from "@/lib/filter-service"
 
 type FilterStatus = 'all' | 'Confirmed' | 'Pending' | 'Cancelled'
 type SortOption = 'date-asc' | 'date-desc' | 'customer-asc' | 'customer-desc' | 'service-asc' | 'service-desc'
 type ViewMode = 'cards' | 'table'
 
 export default function BookingsPage() {
+  const { toast } = useToast()
   const [bookings, setBookings] = React.useState<Booking[]>([])
   const [loading, setLoading] = React.useState(true)
   const [searchQuery, setSearchQuery] = React.useState("")
@@ -80,6 +104,36 @@ export default function BookingsPage() {
   const [expandedCards, setExpandedCards] = React.useState<Set<string>>(new Set())
   const [viewMode, setViewMode] = React.useState<ViewMode>('cards')
   const [filtersOpen, setFiltersOpen] = React.useState(false)
+  const [activeFilters, setActiveFilters] = React.useState<Record<string, any>>({
+    status: statusFilter,
+    search: searchQuery,
+    date: selectedDate,
+    sort: sortOption,
+  })
+  
+  // Dialog states
+  const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null)
+  const [viewDetailsOpen, setViewDetailsOpen] = React.useState(false)
+  const [editDialogOpen, setEditDialogOpen] = React.useState(false)
+  const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false)
+  const [editFormData, setEditFormData] = React.useState({
+    service: '',
+    staff: '',
+    dateTime: '',
+    status: 'Pending' as 'Confirmed' | 'Pending' | 'Cancelled',
+    notes: '',
+  })
+
+  // Apply default view on mount
+  React.useEffect(() => {
+    const role = getCurrentUserRole()
+    const defaultView = getDefaultView(role, 'bookings' as FilterType)
+    if (defaultView) {
+      setActiveFilters(defaultView.filters)
+      if (defaultView.filters.status) setStatusFilter(defaultView.filters.status)
+      if (defaultView.filters.sort) setSortOption(defaultView.filters.sort)
+    }
+  }, [])
 
   React.useEffect(() => {
     fetch('/api/data')
@@ -206,6 +260,79 @@ export default function BookingsPage() {
     })
   }
 
+  // Handle view details
+  const handleViewDetails = (booking: Booking) => {
+    setSelectedBooking(booking)
+    setViewDetailsOpen(true)
+  }
+
+  // Handle edit booking
+  const handleEditBooking = (booking: Booking) => {
+    setSelectedBooking(booking)
+    const bookingDate = booking.dateTime instanceof Date ? booking.dateTime : new Date(booking.dateTime)
+    setEditFormData({
+      service: booking.service,
+      staff: booking.staff,
+      dateTime: format(bookingDate, "yyyy-MM-dd'T'HH:mm"),
+      status: booking.status,
+      notes: '',
+    })
+    setEditDialogOpen(true)
+  }
+
+  // Handle save edit
+  const handleSaveEdit = () => {
+    if (!selectedBooking) return
+    
+    // Update booking in state
+    setBookings(prev => prev.map(b => 
+      b.id === selectedBooking.id 
+        ? {
+            ...b,
+            service: editFormData.service,
+            staff: editFormData.staff,
+            dateTime: new Date(editFormData.dateTime),
+            status: editFormData.status,
+          }
+        : b
+    ))
+    
+    toast({
+      title: 'Booking updated',
+      description: 'Booking details have been updated successfully',
+    })
+    
+    setEditDialogOpen(false)
+    setSelectedBooking(null)
+  }
+
+  // Handle cancel booking
+  const handleCancelBooking = () => {
+    if (!selectedBooking) return
+    
+    // Update booking status to Cancelled
+    setBookings(prev => prev.map(b => 
+      b.id === selectedBooking.id 
+        ? { ...b, status: 'Cancelled' as const }
+        : b
+    ))
+    
+    toast({
+      title: 'Booking cancelled',
+      description: 'The booking has been cancelled successfully',
+      variant: 'default',
+    })
+    
+    setCancelDialogOpen(false)
+    setSelectedBooking(null)
+  }
+
+  // Open cancel dialog
+  const handleCancelClick = (booking: Booking) => {
+    setSelectedBooking(booking)
+    setCancelDialogOpen(true)
+  }
+
   // Count active filters
   const activeFiltersCount = React.useMemo(() => {
     let count = 0
@@ -279,9 +406,18 @@ export default function BookingsPage() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>View Details</DropdownMenuItem>
-                    <DropdownMenuItem>Edit Booking</DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">Cancel Booking</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleViewDetails(booking)}>
+                      View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
+                      Edit Booking
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-destructive"
+                      onClick={() => handleCancelClick(booking)}
+                    >
+                      Cancel Booking
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -478,9 +614,18 @@ export default function BookingsPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
-                            <DropdownMenuItem>Edit Booking</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">Cancel Booking</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewDetails(booking)}>
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditBooking(booking)}>
+                              Edit Booking
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleCancelClick(booking)}
+                            >
+                              Cancel Booking
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -498,6 +643,20 @@ export default function BookingsPage() {
   // Filters Component - Reusable for mobile drawer and desktop
   const FiltersContent = ({ onClose }: { onClose?: () => void }) => (
     <div className="flex flex-col gap-4">
+      {/* Saved Filters - Mobile */}
+      <div className="lg:hidden">
+        <SavedFilters
+          type="bookings"
+          currentFilters={activeFilters}
+          onApplyFilter={(filters) => {
+            setActiveFilters(filters)
+            if (filters.status) setStatusFilter(filters.status)
+            if (filters.search) setSearchQuery(filters.search)
+            if (filters.sort) setSortOption(filters.sort)
+            if (onClose) onClose()
+          }}
+        />
+      </div>
       {/* Search Bar */}
       <div className="relative w-full">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
@@ -660,8 +819,18 @@ export default function BookingsPage() {
                 Manage and view all your appointments ({bookings.length} total)
               </p>
             </div>
-            {/* View Toggle - Desktop Only */}
+            {/* View Toggle + Saved Filters - Desktop Only */}
             <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+              <SavedFilters
+                type="bookings"
+                currentFilters={activeFilters}
+                onApplyFilter={(filters) => {
+                  setActiveFilters(filters)
+                  if (filters.status) setStatusFilter(filters.status)
+                  if (filters.search) setSearchQuery(filters.search)
+                  if (filters.sort) setSortOption(filters.sort)
+                }}
+              />
               <div className="flex items-center gap-1 rounded-lg border-2 border-border/60 bg-muted/30 p-1">
                 <Button
                   variant={viewMode === 'cards' ? 'default' : 'ghost'}
@@ -855,6 +1024,165 @@ export default function BookingsPage() {
           </Card>
         )}
       </section>
+
+      {/* View Details Dialog */}
+      <Dialog open={viewDetailsOpen} onOpenChange={setViewDetailsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Booking Details</DialogTitle>
+            <DialogDescription>
+              Complete information for this booking
+            </DialogDescription>
+          </DialogHeader>
+          {selectedBooking && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">Customer</Label>
+                  <p className="font-semibold">{selectedBooking.customer}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Service</Label>
+                  <p className="font-semibold">{selectedBooking.service}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Staff</Label>
+                  <p className="font-semibold">{selectedBooking.staff}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">Status</Label>
+                  <Badge 
+                    variant={selectedBooking.status === 'Confirmed' ? 'default' : selectedBooking.status === 'Cancelled' ? 'destructive' : 'secondary'}
+                  >
+                    {selectedBooking.status}
+                  </Badge>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">Date & Time</Label>
+                  <p className="font-semibold">
+                    {format(selectedBooking.dateTime instanceof Date ? selectedBooking.dateTime : new Date(selectedBooking.dateTime), 'PPpp')}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewDetailsOpen(false)}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              setViewDetailsOpen(false)
+              if (selectedBooking) handleEditBooking(selectedBooking)
+            }}>
+              Edit Booking
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Booking Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Booking</DialogTitle>
+            <DialogDescription>
+              Update booking details
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="service">Service</Label>
+              <Input
+                id="service"
+                value={editFormData.service}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, service: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="staff">Staff</Label>
+              <Input
+                id="staff"
+                value={editFormData.staff}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, staff: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dateTime">Date & Time</Label>
+              <Input
+                id="dateTime"
+                type="datetime-local"
+                value={editFormData.dateTime}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, dateTime: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={editFormData.status}
+                onValueChange={(value: 'Confirmed' | 'Pending' | 'Cancelled') => 
+                  setEditFormData(prev => ({ ...prev, status: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Confirmed">Confirmed</SelectItem>
+                  <SelectItem value="Cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes (Optional)</Label>
+              <Textarea
+                id="notes"
+                value={editFormData.notes}
+                onChange={(e) => setEditFormData(prev => ({ ...prev, notes: e.target.value }))}
+                rows={3}
+                placeholder="Add any additional notes..."
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Booking Confirmation Dialog */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Booking</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this booking? This action cannot be undone.
+              {selectedBooking && (
+                <div className="mt-4 p-3 bg-muted rounded-lg">
+                  <p className="font-semibold">{selectedBooking.service}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedBooking.customer} • {format(selectedBooking.dateTime instanceof Date ? selectedBooking.dateTime : new Date(selectedBooking.dateTime), 'PPpp')}
+                  </p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Booking</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleCancelBooking}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Cancel Booking
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
