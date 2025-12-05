@@ -651,8 +651,13 @@ export default function BookingsPage() {
           onApplyFilter={(filters) => {
             setActiveFilters(filters)
             if (filters.status) setStatusFilter(filters.status)
-            if (filters.search) setSearchQuery(filters.search)
+            if (filters.search !== undefined) setSearchQuery(filters.search)
             if (filters.sort) setSortOption(filters.sort)
+            if (filters.date) {
+              setSelectedDate(filters.date instanceof Date ? filters.date : new Date(filters.date))
+            } else if (filters.date === null) {
+              setSelectedDate(null)
+            }
             if (onClose) onClose()
           }}
         />
@@ -827,8 +832,13 @@ export default function BookingsPage() {
                 onApplyFilter={(filters) => {
                   setActiveFilters(filters)
                   if (filters.status) setStatusFilter(filters.status)
-                  if (filters.search) setSearchQuery(filters.search)
+                  if (filters.search !== undefined) setSearchQuery(filters.search)
                   if (filters.sort) setSortOption(filters.sort)
+                  if (filters.date) {
+                    setSelectedDate(filters.date instanceof Date ? filters.date : new Date(filters.date))
+                  } else if (filters.date === null) {
+                    setSelectedDate(null)
+                  }
                 }}
               />
               <div className="flex items-center gap-1 rounded-lg border-2 border-border/60 bg-muted/30 p-1">

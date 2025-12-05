@@ -171,6 +171,13 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
       });
   }, [query]);
 
+  const handleSelectResult = React.useCallback((result: SearchResult) => {
+    router.push(result.url);
+    onOpenChange(false);
+    setQuery('');
+    setSelectedIndex(0);
+  }, [router, onOpenChange]);
+
   // Keyboard navigation
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -192,14 +199,7 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, results, selectedIndex]);
-
-  const handleSelectResult = (result: SearchResult) => {
-    router.push(result.url);
-    onOpenChange(false);
-    setQuery('');
-    setSelectedIndex(0);
-  };
+  }, [open, results, selectedIndex, handleSelectResult]);
 
   const getTypeLabel = (type: string) => {
     switch (type) {

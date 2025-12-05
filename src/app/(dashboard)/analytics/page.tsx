@@ -31,13 +31,24 @@ export default function AnalyticsPage() {
 
     React.useEffect(() => {
         fetch('/api/data')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+                return res.json();
+            })
             .then(data => {
-                setAnalyticsData(data.analytics || { volume: [], conversion: [] });
+                // Ensure analytics data structure is correct
+                const analytics = data.analytics || {};
+                setAnalyticsData({
+                    volume: analytics.volume || [],
+                    conversion: analytics.conversion || [],
+                });
                 setLoading(false);
             })
             .catch(err => {
                 console.error('Error fetching analytics:', err);
+                setAnalyticsData({ volume: [], conversion: [] });
                 setLoading(false);
             });
     }, []);

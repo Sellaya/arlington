@@ -31,6 +31,13 @@ export function ManagerDigestCard({ interactions, leads, bookings }: {
   const [loading, setLoading] = React.useState(false);
   const [expanded, setExpanded] = React.useState(true); // Start expanded when digest is generated
 
+  const toggleExpanded = React.useCallback(() => {
+    setExpanded(prev => {
+      const newValue = !prev;
+      return newValue;
+    });
+  }, []);
+
   const generateDigest = async () => {
     setLoading(true);
     try {
@@ -127,14 +134,13 @@ export function ManagerDigestCard({ interactions, leads, bookings }: {
               Refresh
             </Button>
             <Button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setExpanded(prev => !prev);
-              }}
+              onClick={toggleExpanded}
               variant="ghost"
               size="sm"
               type="button"
+              className="min-w-[80px] hover:bg-muted/50 active:bg-muted transition-colors"
+              aria-label={expanded ? 'Collapse details' : 'Expand details'}
+              aria-expanded={expanded}
             >
               {expanded ? 'Collapse' : 'Expand'}
             </Button>
@@ -185,7 +191,7 @@ export function ManagerDigestCard({ interactions, leads, bookings }: {
 
           {/* Highlights */}
           {expanded && digest?.highlights && digest.highlights.length > 0 && (
-            <div>
+            <div className="animate-in fade-in slide-in-from-top-2 duration-200">
               <h4 className="font-semibold mb-2 text-sm">Key Highlights</h4>
               <ul className="space-y-2">
                 {digest.highlights.map((highlight, idx) => (
@@ -200,7 +206,7 @@ export function ManagerDigestCard({ interactions, leads, bookings }: {
 
           {/* Recommendations */}
           {expanded && digest?.recommendations && digest.recommendations.length > 0 && (
-            <div>
+            <div className="animate-in fade-in slide-in-from-top-2 duration-200">
               <h4 className="font-semibold mb-2 text-sm">Recommendations</h4>
               <ul className="space-y-2">
                 {digest.recommendations.map((rec, idx) => (
@@ -212,6 +218,13 @@ export function ManagerDigestCard({ interactions, leads, bookings }: {
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {/* Collapsed indicator */}
+          {!expanded && (digest?.highlights?.length > 0 || digest?.recommendations?.length > 0) && (
+            <div className="text-center py-2 text-muted-foreground text-sm border-t border-border/40 pt-4">
+              <p>Additional details hidden. Click "Expand" to view highlights and recommendations.</p>
             </div>
           )}
         </div>
