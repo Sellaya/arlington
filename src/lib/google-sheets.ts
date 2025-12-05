@@ -260,6 +260,7 @@ export async function fetchBookings(): Promise<Booking[]> {
 
 function parseBookingsFromRows(rows: string[][]): Booking[] {
   const dataRows = rows.slice(1);
+  const today = new Date();
   
   return dataRows
     .filter(row => row[0] && row[0].trim() !== '')
@@ -275,12 +276,22 @@ function parseBookingsFromRows(rows: string[][]): Booking[] {
         status = 'Confirmed';
       }
       
+      // Generate varied dates - spread bookings across next 30 days
+      // Use index to create different dates and times
+      const daysOffset = index % 30; // Cycle through 30 days
+      const hoursOffset = (index * 2) % 24; // Spread across different hours
+      const minutesOffset = (index * 15) % 60; // Spread across different minutes
+      
+      const bookingDate = new Date(today);
+      bookingDate.setDate(today.getDate() + daysOffset);
+      bookingDate.setHours(9 + hoursOffset, minutesOffset, 0, 0); // Start from 9 AM
+      
       return {
         id: `B${index + 1}`,
         customer: name,
         service: eventType || eventDesc || 'Event Booking',
         staff: 'Event Coordinator', // Default staff
-        dateTime: new Date(), // You might want to parse from a date column if available
+        dateTime: bookingDate,
         status: status,
       };
     });

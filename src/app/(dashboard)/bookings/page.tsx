@@ -1,12 +1,19 @@
 "use client"
 
 import * as React from "react"
-import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import {
   Select,
   SelectContent,
@@ -15,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { Booking } from "@/lib/types"
-import { format, addDays, isSameDay, isToday, isPast, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns"
+import { format, isToday, isPast } from "date-fns"
 import { 
   Calendar as CalendarIcon, 
   Filter, 
@@ -23,12 +30,17 @@ import {
   User, 
   Briefcase, 
   Search,
-  ChevronLeft,
-  ChevronRight,
   MoreVertical,
   CheckCircle2,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Phone,
+  Mail,
+  Grid3x3,
+  List
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -38,16 +50,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type FilterStatus = 'all' | 'Confirmed' | 'Pending' | 'Cancelled'
+type SortOption = 'date-asc' | 'date-desc' | 'customer-asc' | 'customer-desc' | 'service-asc' | 'service-desc'
+type ViewMode = 'cards' | 'table'
 
 export default function BookingsPage() {
-  const [date, setDate] = React.useState<Date | undefined>(new Date())
   const [bookings, setBookings] = React.useState<Booking[]>([])
   const [loading, setLoading] = React.useState(true)
   const [searchQuery, setSearchQuery] = React.useState("")
   const [statusFilter, setStatusFilter] = React.useState<FilterStatus>('all')
-  const [viewMode, setViewMode] = React.useState<'day' | 'week' | 'month'>('day')
+  const [sortOption, setSortOption] = React.useState<SortOption>('date-asc')
+  const [selectedDate, setSelectedDate] = React.useState<Date | null>(null)
+  const [expandedCards, setExpandedCards] = React.useState<Set<string>>(new Set())
+  const [viewMode, setViewMode] = React.useState<ViewMode>('cards')
 
   React.useEffect(() => {
     fetch('/api/data')
@@ -67,31 +89,16 @@ export default function BookingsPage() {
       })
   }, [])
 
-  // Filter bookings based on selected date and filters
-  const filteredBookings = React.useMemo(() => {
+  // Filter and sort bookings
+  const filteredAndSortedBookings = React.useMemo(() => {
     let filtered = bookings
 
-    // Filter by date based on view mode
-    if (date) {
-      if (viewMode === 'day') {
-        filtered = filtered.filter(b => 
-          format(b.dateTime, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-        )
-      } else if (viewMode === 'week') {
-        const weekStart = startOfWeek(date, { weekStartsOn: 1 })
-        const weekEnd = endOfWeek(date, { weekStartsOn: 1 })
-        filtered = filtered.filter(b => {
-          const bookingDate = b.dateTime
-          return bookingDate >= weekStart && bookingDate <= weekEnd
-        })
-      } else if (viewMode === 'month') {
-        const monthStart = startOfMonth(date)
-        const monthEnd = endOfMonth(date)
-        filtered = filtered.filter(b => {
-          const bookingDate = b.dateTime
-          return bookingDate >= monthStart && bookingDate <= monthEnd
-        })
-      }
+    // Filter by selected date
+    if (selectedDate) {
+      filtered = filtered.filter(b => {
+        const bookingDate = b.dateTime instanceof Date ? b.dateTime : new Date(b.dateTime)
+        return format(bookingDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+      })
     }
 
     // Filter by status
@@ -109,31 +116,58 @@ export default function BookingsPage() {
       )
     }
 
-    // Sort by dateTime
-    return filtered.sort((a, b) => {
-      const aTime = a.dateTime instanceof Date ? a.dateTime.getTime() : new Date(a.dateTime).getTime()
-      const bTime = b.dateTime instanceof Date ? b.dateTime.getTime() : new Date(b.dateTime).getTime()
-      return aTime - bTime
+    // Sort bookings
+    filtered.sort((a, b) => {
+      const aDate = a.dateTime instanceof Date ? a.dateTime : new Date(a.dateTime)
+      const bDate = b.dateTime instanceof Date ? b.dateTime : new Date(b.dateTime)
+
+      switch (sortOption) {
+        case 'date-asc':
+          return aDate.getTime() - bDate.getTime()
+        case 'date-desc':
+          return bDate.getTime() - aDate.getTime()
+        case 'customer-asc':
+          return a.customer.localeCompare(b.customer)
+        case 'customer-desc':
+          return b.customer.localeCompare(a.customer)
+        case 'service-asc':
+          return a.service.localeCompare(b.service)
+        case 'service-desc':
+          return b.service.localeCompare(a.service)
+        default:
+          return 0
+      }
     })
-  }, [bookings, date, statusFilter, searchQuery, viewMode])
 
-  // Generate dates for horizontal scrollable picker (next 21 days)
-  const upcomingDates = React.useMemo(() => {
-    const dates = []
-    const today = new Date()
-    for (let i = 0; i < 21; i++) {
-      dates.push(addDays(today, i))
-    }
-    return dates
-  }, [])
+    return filtered
+  }, [bookings, selectedDate, statusFilter, searchQuery, sortOption])
 
-  // Get appointments count for each date
-  const getAppointmentCount = (checkDate: Date) => {
-    return bookings.filter(b => {
-      const bookingDate = b.dateTime instanceof Date ? b.dateTime : new Date(b.dateTime)
-      return format(bookingDate, 'yyyy-MM-dd') === format(checkDate, 'yyyy-MM-dd')
-    }).length
-  }
+  // Group bookings by date
+  const groupedBookings = React.useMemo(() => {
+    const groups: Record<string, Booking[]> = {}
+    
+    filteredAndSortedBookings.forEach(booking => {
+      const bookingDate = booking.dateTime instanceof Date ? booking.dateTime : new Date(booking.dateTime)
+      const dateKey = format(bookingDate, 'yyyy-MM-dd')
+      
+      if (!groups[dateKey]) {
+        groups[dateKey] = []
+      }
+      groups[dateKey].push(booking)
+    })
+
+    return Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
+  }, [filteredAndSortedBookings])
+
+  // Get unique dates from bookings
+  const availableDates = React.useMemo(() => {
+    const dates = new Set<string>()
+    bookings.forEach(booking => {
+      const bookingDate = booking.dateTime instanceof Date ? booking.dateTime : new Date(booking.dateTime)
+      dates.add(format(bookingDate, 'yyyy-MM-dd'))
+    })
+    return Array.from(dates).sort()
+  }, [bookings])
 
   // Get status icon
   const getStatusIcon = (status: string) => {
@@ -149,207 +183,33 @@ export default function BookingsPage() {
     }
   }
 
-  // Horizontal Scrollable Date Picker (Mobile & Web)
-  const HorizontalDatePicker = () => (
-    <div className="w-full">
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <h3 
-            className="font-semibold text-foreground"
-            style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
-          >
-            Select Date
-          </h3>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => {
-                if (date) {
-                  setDate(addDays(date, -1))
-                }
-              }}
-              aria-label="Previous day"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => setDate(new Date())}
-              aria-label="Today"
-            >
-              <span className="text-xs">Today</span>
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => {
-                if (date) {
-                  setDate(addDays(date, 1))
-                }
-              }}
-              aria-label="Next day"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-      <div 
-        className="w-full overflow-x-auto overflow-y-hidden scrollbar-hide pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8" 
-        style={{ 
-          scrollbarWidth: 'none', 
-          msOverflowStyle: 'none',
-          scrollBehavior: 'smooth',
-          WebkitOverflowScrolling: 'touch'
-        }}
-      >
-        <div className="flex gap-2 sm:gap-3 min-w-max">
-          {loading ? (
-            Array.from({ length: 21 }).map((_, i) => (
-              <Skeleton key={i} className="h-[90px] sm:h-[100px] w-[70px] sm:w-[80px] rounded-xl flex-shrink-0" />
-            ))
-          ) : (
-            upcomingDates.map((day) => {
-              const isSelected = date && isSameDay(day, date)
-              const isTodayDate = isToday(day)
-              const appointmentCount = getAppointmentCount(day)
-              const isPastDate = isPast(day) && !isTodayDate
-
-              return (
-                <button
-                  key={day.toISOString()}
-                  onClick={() => !isPastDate && setDate(day)}
-                  disabled={isPastDate}
-                  aria-label={`Select ${format(day, 'EEEE, MMMM d')}${appointmentCount > 0 ? `, ${appointmentCount} appointment${appointmentCount !== 1 ? 's' : ''}` : ''}`}
-                  aria-pressed={isSelected}
-                  className={`flex flex-col items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 sm:py-4 rounded-xl border-2 transition-all duration-200 min-w-[70px] sm:min-w-[80px] flex-shrink-0 touch-3d active:scale-95 ${
-                    isSelected
-                      ? 'border-primary bg-gradient-to-br from-primary to-primary/90 text-primary-foreground shadow-3d-md scale-105 z-10'
-                      : isPastDate
-                      ? 'border-border/40 bg-muted/30 text-muted-foreground opacity-50 cursor-not-allowed'
-                      : 'border-border/60 bg-card/95 text-foreground hover:border-primary/50 hover:shadow-3d-sm hover:bg-card hover:scale-105'
-                  }`}
-                >
-                  <span 
-                    className={`font-medium whitespace-nowrap ${isTodayDate && !isSelected ? 'text-primary font-semibold' : ''}`}
-                    style={{ fontSize: 'clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem)' }}
-                  >
-                    {format(day, 'EEE')}
-                  </span>
-                  <span 
-                    className={`font-bold ${isTodayDate && !isSelected ? 'text-primary' : ''}`}
-                    style={{ fontSize: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)' }}
-                  >
-                    {format(day, 'd')}
-                  </span>
-                  {appointmentCount > 0 && (
-                    <span 
-                      className={`px-1.5 sm:px-2 py-0.5 rounded-full text-xs font-semibold whitespace-nowrap ${
-                        isSelected
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-primary/10 text-primary'
-                      }`}
-                    >
-                      {appointmentCount}
-                    </span>
-                  )}
-                </button>
-              )
-            })
-          )}
-        </div>
-      </div>
-    </div>
-  )
-
-  // Tablet/Desktop: Full Calendar
-  const DesktopCalendar = () => (
-    <div className="hidden lg:block">
-      <Card className="sticky top-4 lg:top-6 xl:top-8 border-border/60 bg-card/95 backdrop-blur-sm shadow-3d-md">
-        <CardHeader className="pb-3 lg:pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle 
-              className="flex items-center gap-2 text-foreground"
-              style={{ fontSize: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)' }}
-            >
-              <CalendarIcon className="h-5 w-5" />
-              Calendar
-            </CardTitle>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => {
-                  if (date) {
-                    setDate(addDays(date, -1))
-                  }
-                }}
-                aria-label="Previous day"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setDate(new Date())}
-                aria-label="Today"
-              >
-                <span className="text-xs">Today</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => {
-                  if (date) {
-                    setDate(addDays(date, 1))
-                  }
-                }}
-                aria-label="Next day"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-4 lg:p-6">
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={setDate}
-            className="rounded-xl w-full"
-            modifiers={{
-              hasAppointments: bookings.map(b => {
-                const bookingDate = b.dateTime instanceof Date ? b.dateTime : new Date(b.dateTime)
-                return bookingDate
-              })
-            }}
-            modifiersClassNames={{
-              hasAppointments: "bg-primary/10 border-primary/30"
-            }}
-          />
-        </CardContent>
-      </Card>
-    </div>
-  )
+  // Toggle card expansion
+  const toggleCard = (bookingId: string) => {
+    setExpandedCards(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(bookingId)) {
+        newSet.delete(bookingId)
+      } else {
+        newSet.add(bookingId)
+      }
+      return newSet
+    })
+  }
 
   // Enhanced Appointment Card Component
   const AppointmentCard = ({ booking }: { booking: Booking }) => {
     const bookingDate = booking.dateTime instanceof Date ? booking.dateTime : new Date(booking.dateTime)
     const isPastBooking = isPast(bookingDate) && !isToday(bookingDate)
+    const isTodayBooking = isToday(bookingDate)
+    const isExpanded = expandedCards.has(booking.id)
     
     return (
       <Card
         className={`group border-2 transition-all duration-300 hover:shadow-3d-md hover:-translate-y-1 touch-3d active:scale-[0.98] transform-gpu ${
           isPastBooking 
             ? 'border-border/40 bg-muted/20 opacity-75' 
+            : isTodayBooking
+            ? 'border-primary/40 bg-primary/5'
             : 'border-border/60 bg-gradient-to-br from-card/95 to-card/90 backdrop-blur-sm hover:border-primary/30'
         }`}
       >
@@ -358,13 +218,20 @@ export default function BookingsPage() {
             {/* Header: Service & Status */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <h3 
-                  className="font-bold text-foreground mb-1.5 line-clamp-2"
-                  style={{ fontSize: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)' }}
-                >
-                  {booking.service}
-                </h3>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 
+                    className="font-bold text-foreground line-clamp-2"
+                    style={{ fontSize: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)' }}
+                  >
+                    {booking.service}
+                  </h3>
+                  {isTodayBooking && (
+                    <Badge variant="default" className="text-xs">
+                      Today
+                    </Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
                   {getStatusIcon(booking.status)}
                   <Badge 
                     variant={booking.status === 'Confirmed' ? 'default' : booking.status === 'Cancelled' ? 'destructive' : 'secondary'}
@@ -374,116 +241,242 @@ export default function BookingsPage() {
                   </Badge>
                 </div>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem>View Details</DropdownMenuItem>
-                  <DropdownMenuItem>Edit Booking</DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive">Cancel Booking</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <Collapsible open={isExpanded} onOpenChange={() => toggleCard(booking.id)}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
+                </Collapsible>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>View Details</DropdownMenuItem>
+                    <DropdownMenuItem>Edit Booking</DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive">Cancel Booking</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
 
-            {/* Divider */}
-            <div className="h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
-
-            {/* Details Grid */}
-            <div className="grid grid-cols-1 gap-3">
-              {/* Customer */}
-              <div className="flex items-start gap-3">
-                <div className="rounded-lg bg-primary/10 p-2 flex-shrink-0">
-                  <User 
-                    className="h-4 w-4 text-primary"
-                    style={{ 
-                      width: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)',
-                      height: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)'
-                    }}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p 
-                    className="text-muted-foreground text-xs font-medium mb-0.5"
-                    style={{ fontSize: 'clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem)' }}
-                  >
-                    Customer
-                  </p>
-                  <p 
-                    className="font-semibold text-foreground truncate"
-                    style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
-                  >
-                    {booking.customer}
-                  </p>
-                </div>
+            {/* Quick Info */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <User className="h-4 w-4 flex-shrink-0" />
+                <span 
+                  className="truncate text-sm"
+                  style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                >
+                  {booking.customer}
+                </span>
               </div>
-
-              {/* Staff */}
-              <div className="flex items-start gap-3">
-                <div className="rounded-lg bg-accent/10 p-2 flex-shrink-0">
-                  <Briefcase 
-                    className="h-4 w-4 text-accent"
-                    style={{ 
-                      width: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)',
-                      height: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)'
-                    }}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p 
-                    className="text-muted-foreground text-xs font-medium mb-0.5"
-                    style={{ fontSize: 'clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem)' }}
-                  >
-                    Assigned Staff
-                  </p>
-                  <p 
-                    className="font-semibold text-foreground truncate"
-                    style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
-                  >
-                    {booking.staff}
-                  </p>
-                </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <Briefcase className="h-4 w-4 flex-shrink-0" />
+                <span 
+                  className="truncate text-sm"
+                  style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                >
+                  {booking.staff}
+                </span>
               </div>
+            </div>
 
-              {/* Date & Time */}
-              <div className="flex items-start gap-3">
-                <div className="rounded-lg bg-primary/10 p-2 flex-shrink-0">
-                  <Clock 
-                    className="h-4 w-4 text-primary"
-                    style={{ 
-                      width: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)',
-                      height: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)'
-                    }}
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p 
-                    className="text-muted-foreground text-xs font-medium mb-0.5"
-                    style={{ fontSize: 'clamp(0.625rem, 0.5rem + 0.5vw, 0.75rem)' }}
-                  >
-                    Date & Time
-                  </p>
-                  <div className="flex flex-col gap-0.5">
-                    <p 
-                      className="font-semibold text-foreground"
-                      style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
-                    >
-                      {format(bookingDate, 'PPP')}
-                    </p>
-                    <p 
-                      className="text-muted-foreground font-medium"
-                      style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
-                    >
-                      {format(bookingDate, 'p')}
-                    </p>
+            {/* Date & Time - Always Visible */}
+            <div className="flex items-center gap-2 pt-2 border-t border-border/40">
+              <Clock className="h-4 w-4 text-primary flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p 
+                  className="font-semibold text-foreground"
+                  style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                >
+                  {format(bookingDate, 'PPP')}
+                </p>
+                <p 
+                  className="text-muted-foreground font-medium"
+                  style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                >
+                  {format(bookingDate, 'p')}
+                </p>
+              </div>
+            </div>
+
+            {/* Expanded Details */}
+            <Collapsible open={isExpanded} onOpenChange={() => toggleCard(booking.id)}>
+              <CollapsibleContent className="space-y-3 pt-2 border-t border-border/40">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-0.5">Location</p>
+                      <p className="text-sm font-medium">Event Venue</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground mb-0.5">Contact</p>
+                      <p className="text-sm font-medium">+1 (555) 123-4567</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
+                <div className="flex items-start gap-2">
+                  <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-0.5">Notes</p>
+                    <p className="text-sm text-muted-foreground">No additional notes</p>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  // Table View Component for Desktop
+  const TableView = () => {
+    if (filteredAndSortedBookings.length === 0) return null
+
+    return (
+      <Card className="w-full border-border/60 bg-card/95 backdrop-blur-sm shadow-3d-sm">
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border/60">
+                  <TableHead className="min-w-[200px] font-semibold" style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}>
+                    Service
+                  </TableHead>
+                  <TableHead className="min-w-[150px] font-semibold" style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}>
+                    Customer
+                  </TableHead>
+                  <TableHead className="min-w-[150px] font-semibold hidden lg:table-cell" style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}>
+                    Staff
+                  </TableHead>
+                  <TableHead className="min-w-[180px] font-semibold" style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}>
+                    Date & Time
+                  </TableHead>
+                  <TableHead className="min-w-[120px] font-semibold" style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}>
+                    Status
+                  </TableHead>
+                  <TableHead className="w-[60px] text-right font-semibold" style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}>
+                    Actions
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredAndSortedBookings.map((booking) => {
+                  const bookingDate = booking.dateTime instanceof Date ? booking.dateTime : new Date(booking.dateTime)
+                  const isTodayBooking = isToday(bookingDate)
+                  const isPastBooking = isPast(bookingDate) && !isTodayBooking
+
+                  return (
+                    <TableRow 
+                      key={booking.id}
+                      className={`group border-border/40 hover:bg-muted/30 transition-colors ${
+                        isPastBooking ? 'opacity-75' : ''
+                      }`}
+                    >
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p 
+                              className="font-semibold text-foreground truncate"
+                              style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                            >
+                              {booking.service}
+                            </p>
+                            {isTodayBooking && (
+                              <Badge variant="default" className="text-xs mt-1">
+                                Today
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-border/40">
+                            <AvatarFallback className="text-xs">
+                              {booking.customer.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <p 
+                            className="font-medium text-foreground truncate"
+                            style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                          >
+                            {booking.customer}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4 hidden lg:table-cell">
+                        <p 
+                          className="text-muted-foreground truncate"
+                          style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                        >
+                          {booking.staff}
+                        </p>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <div className="flex flex-col gap-0.5">
+                          <p 
+                            className="font-medium text-foreground"
+                            style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                          >
+                            {format(bookingDate, 'MMM d, yyyy')}
+                          </p>
+                          <p 
+                            className="text-muted-foreground"
+                            style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                          >
+                            {format(bookingDate, 'p')}
+                          </p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-4">
+                        <Badge 
+                          variant={booking.status === 'Confirmed' ? 'default' : booking.status === 'Cancelled' ? 'destructive' : 'secondary'}
+                          className="text-xs font-medium"
+                        >
+                          <div className="flex items-center gap-1">
+                            {getStatusIcon(booking.status)}
+                            <span>{booking.status}</span>
+                          </div>
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="py-4 text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem>Edit Booking</DropdownMenuItem>
+                            <DropdownMenuItem className="text-destructive">Cancel Booking</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
@@ -502,12 +495,11 @@ export default function BookingsPage() {
             </div>
             <Skeleton className="h-8 w-8 rounded-full" />
           </div>
-          <Skeleton className="h-px w-full" />
-          <div className="space-y-3">
-            <Skeleton className="h-12 w-full" />
+          <div className="grid grid-cols-2 gap-3">
             <Skeleton className="h-12 w-full" />
             <Skeleton className="h-12 w-full" />
           </div>
+          <Skeleton className="h-16 w-full" />
         </div>
       </CardContent>
     </Card>
@@ -527,17 +519,13 @@ export default function BookingsPage() {
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <Skeleton className="h-10 flex-1" />
             <Skeleton className="h-10 w-full sm:w-32" />
+            <Skeleton className="h-10 w-full sm:w-32" />
           </div>
-        </section>
-
-        {/* Date Picker Skeleton */}
-        <section className="mb-4 sm:mb-6 md:mb-8 w-full">
-          <Skeleton className="h-24 w-full lg:h-auto lg:w-80" />
         </section>
 
         {/* Appointments Skeleton */}
         <section className="w-full">
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+          <div className="flex flex-col gap-4 sm:gap-5 md:gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <AppointmentSkeleton key={i} />
             ))}
@@ -567,24 +555,28 @@ export default function BookingsPage() {
                 Manage and view all your appointments ({bookings.length} total)
               </p>
             </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <Button 
-                variant="outline" 
-                className="w-full sm:w-auto"
-                style={{ 
-                  fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)',
-                  height: 'clamp(2.25rem, 2rem + 0.5vw, 2.75rem)'
-                }}
-              >
-                <Filter 
-                  style={{ 
-                    width: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)',
-                    height: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)'
-                  }}
-                  className="mr-2"
-                />
-                <span>Filter</span>
-              </Button>
+            {/* View Toggle - Desktop Only */}
+            <div className="hidden lg:flex items-center gap-2 flex-shrink-0">
+              <div className="flex items-center gap-1 rounded-lg border-2 border-border/60 bg-muted/30 p-1">
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="h-8 px-3"
+                >
+                  <Grid3x3 className="h-4 w-4 mr-2" />
+                  Cards
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="h-8 px-3"
+                >
+                  <List className="h-4 w-4 mr-2" />
+                  Table
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -592,134 +584,216 @@ export default function BookingsPage() {
 
       {/* Search and Filter Section */}
       <section className="mb-4 sm:mb-6 md:mb-8 w-full">
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col gap-3 sm:gap-4 lg:gap-5">
+          {/* Search Bar - Full Width */}
+          <div className="relative flex-1 w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 lg:h-5 lg:w-5 text-muted-foreground" />
             <Input
               placeholder="Search bookings by customer, service, or staff..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11"
-              style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+              className="pl-10 lg:pl-12 h-11 lg:h-12 text-base lg:text-lg"
             />
           </div>
-          <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as FilterStatus)}>
-            <SelectTrigger className="w-full sm:w-[180px] h-11">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Confirmed">Confirmed</SelectItem>
-              <SelectItem value="Pending">Pending</SelectItem>
-              <SelectItem value="Cancelled">Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
+
+          {/* Filters Row - Optimized for Desktop */}
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-5">
+            {/* Date Filter */}
+            <Select 
+              value={selectedDate ? format(selectedDate, 'yyyy-MM-dd') : 'all'} 
+              onValueChange={(value) => {
+                if (value === 'all') {
+                  setSelectedDate(null)
+                } else {
+                  setSelectedDate(new Date(value))
+                }
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-[200px] lg:w-[220px] h-11 lg:h-12">
+                <CalendarIcon className="mr-2 h-4 w-4 lg:h-5 lg:w-5" />
+                <SelectValue placeholder="Filter by date" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Dates</SelectItem>
+                {availableDates.map(dateStr => {
+                  const date = new Date(dateStr)
+                  return (
+                    <SelectItem key={dateStr} value={dateStr}>
+                      {format(date, 'PPP')}
+                    </SelectItem>
+                  )
+                })}
+              </SelectContent>
+            </Select>
+
+            {/* Status Filter */}
+            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as FilterStatus)}>
+              <SelectTrigger className="w-full sm:w-[180px] lg:w-[200px] h-11 lg:h-12">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="Confirmed">Confirmed</SelectItem>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Sort Filter */}
+            <Select value={sortOption} onValueChange={(value) => setSortOption(value as SortOption)}>
+              <SelectTrigger className="w-full sm:w-[180px] lg:w-[200px] h-11 lg:h-12">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date-asc">Date (Oldest First)</SelectItem>
+                <SelectItem value="date-desc">Date (Newest First)</SelectItem>
+                <SelectItem value="customer-asc">Customer (A-Z)</SelectItem>
+                <SelectItem value="customer-desc">Customer (Z-A)</SelectItem>
+                <SelectItem value="service-asc">Service (A-Z)</SelectItem>
+                <SelectItem value="service-desc">Service (Z-A)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* View Toggle - Mobile */}
+            <div className="flex lg:hidden items-center gap-2">
+              <div className="flex items-center gap-1 rounded-lg border-2 border-border/60 bg-muted/30 p-1 flex-1">
+                <Button
+                  variant={viewMode === 'cards' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('cards')}
+                  className="h-8 px-3 flex-1"
+                >
+                  <Grid3x3 className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="h-8 px-3 flex-1"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Calendar and Appointments Grid */}
+      {/* Bookings List Section */}
       <section className="w-full">
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-4 xl:gap-8 2xl:gap-10">
-          {/* Desktop Calendar */}
-          <DesktopCalendar />
+        {filteredAndSortedBookings.length > 0 ? (
+          viewMode === 'table' ? (
+            <TableView />
+          ) : (
+            <div className="flex flex-col gap-4 sm:gap-5 md:gap-6 lg:gap-8">
+              {/* Group by Date */}
+              {groupedBookings.length > 0 ? (
+                groupedBookings.map(([dateKey, dateBookings]) => {
+                  const date = new Date(dateKey)
+                  const isTodayDate = isToday(date)
+                  const isPastDate = isPast(date) && !isTodayDate
 
-          {/* Appointments Section */}
-          <div className="lg:col-span-3 w-full">
-            {/* Horizontal Date Picker - Always visible, scrollable */}
-            <div className="mb-4 sm:mb-6">
-              <HorizontalDatePicker />
-            </div>
+                  return (
+                    <div key={dateKey} className="flex flex-col gap-3 sm:gap-4 lg:gap-5">
+                      {/* Date Header */}
+                      <div className={`flex items-center gap-3 px-4 sm:px-5 lg:px-6 py-3 lg:py-4 rounded-xl ${
+                        isTodayDate 
+                          ? 'bg-primary/10 border-2 border-primary/20 shadow-3d-sm' 
+                          : isPastDate
+                          ? 'bg-muted/30 border border-border/40'
+                          : 'bg-muted/20 border border-border/40'
+                      }`}>
+                        <CalendarIcon className={`h-5 w-5 lg:h-6 lg:w-6 flex-shrink-0 ${
+                          isTodayDate ? 'text-primary' : 'text-muted-foreground'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <h2 
+                            className={`font-semibold ${
+                              isTodayDate ? 'text-primary' : 'text-foreground'
+                            }`}
+                            style={{ fontSize: 'clamp(1rem, 0.875rem + 0.5vw, 1.5rem)' }}
+                          >
+                            {isTodayDate ? 'Today' : isPastDate ? 'Past' : format(date, 'EEEE, MMMM d, yyyy')}
+                          </h2>
+                          <p 
+                            className="text-muted-foreground"
+                            style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
+                          >
+                            {dateBookings.length} appointment{dateBookings.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                      </div>
 
-            {/* Appointments Card */}
-            <Card className="w-full border-border/60 bg-card/95 backdrop-blur-sm shadow-3d-sm">
-              <CardHeader className="pb-4 sm:pb-5 md:pb-6">
-                <div className="flex flex-col gap-1 sm:gap-2">
-                  <CardTitle 
-                    className="text-foreground flex items-center gap-2"
-                    style={{ fontSize: 'clamp(1.125rem, 1rem + 0.75vw, 1.5rem)' }}
-                  >
-                    <CalendarIcon className="h-5 w-5" />
-                    {date ? (
-                      viewMode === 'day' ? (
-                        <>Appointments for {format(date, 'PPP')}</>
-                      ) : viewMode === 'week' ? (
-                        <>Week of {format(startOfWeek(date, { weekStartsOn: 1 }), 'MMM d')}</>
-                      ) : (
-                        <>Appointments for {format(date, 'MMMM yyyy')}</>
-                      )
-                    ) : (
-                      'Select a date'
-                    )}
-                  </CardTitle>
-                  <CardDescription 
-                    className="text-muted-foreground"
-                    style={{ fontSize: 'clamp(0.75rem, 0.625rem + 0.5vw, 0.875rem)' }}
-                  >
-                    {filteredBookings.length === 0 
-                      ? 'No appointments found'
-                      : `${filteredBookings.length} appointment${filteredBookings.length !== 1 ? 's' : ''} scheduled`
-                    }
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent className="p-4 sm:p-5 md:p-6 lg:p-8">
-                {filteredBookings.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
-                    {filteredBookings.map((booking) => (
-                      <AppointmentCard key={booking.id} booking={booking} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-12 sm:py-16 lg:py-20 text-muted-foreground">
-                    <div className="flex flex-col items-center gap-4">
-                      <div className="rounded-full bg-muted/50 p-4">
-                        <CalendarIcon 
-                          className="h-12 w-12 sm:h-16 sm:w-16 opacity-50"
-                          style={{ 
-                            width: 'clamp(3rem, 2.5rem + 2vw, 4rem)',
-                            height: 'clamp(3rem, 2.5rem + 2vw, 4rem)'
-                          }}
-                        />
+                      {/* Bookings Grid - Responsive Columns */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                        {dateBookings.map((booking) => (
+                          <AppointmentCard key={booking.id} booking={booking} />
+                        ))}
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <p 
-                          className="font-semibold text-foreground"
-                          style={{ fontSize: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)' }}
-                        >
-                          {searchQuery || statusFilter !== 'all' 
-                            ? 'No bookings match your filters'
-                            : 'No appointments found'
-                          }
-                        </p>
-                        <p 
-                          className="text-muted-foreground"
-                          style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
-                        >
-                          {searchQuery || statusFilter !== 'all'
-                            ? 'Try adjusting your search or filter criteria'
-                            : 'Select another date or create a new booking'
-                          }
-                        </p>
-                      </div>
-                      {(searchQuery || statusFilter !== 'all') && (
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            setSearchQuery('')
-                            setStatusFilter('all')
-                          }}
-                          className="mt-2"
-                        >
-                          Clear Filters
-                        </Button>
-                      )}
                     </div>
+                  )
+                })
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3 sm:gap-4 md:gap-5 lg:gap-6">
+                  {filteredAndSortedBookings.map((booking) => (
+                    <AppointmentCard key={booking.id} booking={booking} />
+                  ))}
+                </div>
+              )}
+            </div>
+          )
+        ) : (
+          <Card className="w-full border-border/60 bg-card/95 backdrop-blur-sm">
+            <CardContent className="p-12 sm:p-16 lg:p-20">
+              <div className="text-center text-muted-foreground">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="rounded-full bg-muted/50 p-4">
+                    <CalendarIcon 
+                      className="h-12 w-12 sm:h-16 sm:w-16 opacity-50"
+                      style={{ 
+                        width: 'clamp(3rem, 2.5rem + 2vw, 4rem)',
+                        height: 'clamp(3rem, 2.5rem + 2vw, 4rem)'
+                      }}
+                    />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                  <div className="flex flex-col gap-2">
+                    <p 
+                      className="font-semibold text-foreground"
+                      style={{ fontSize: 'clamp(1rem, 0.875rem + 0.5vw, 1.25rem)' }}
+                    >
+                      {searchQuery || statusFilter !== 'all' || selectedDate
+                        ? 'No bookings match your filters'
+                        : 'No appointments found'
+                      }
+                    </p>
+                    <p 
+                      className="text-muted-foreground"
+                      style={{ fontSize: 'clamp(0.875rem, 0.75rem + 0.5vw, 1rem)' }}
+                    >
+                      {searchQuery || statusFilter !== 'all' || selectedDate
+                        ? 'Try adjusting your search or filter criteria'
+                        : 'Create a new booking to get started'
+                      }
+                    </p>
+                  </div>
+                  {(searchQuery || statusFilter !== 'all' || selectedDate) && (
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSearchQuery('')
+                        setStatusFilter('all')
+                        setSelectedDate(null)
+                      }}
+                      className="mt-2"
+                    >
+                      Clear Filters
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </section>
     </div>
   )
