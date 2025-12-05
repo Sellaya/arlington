@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -13,12 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { LogOut, User, Settings, LifeBuoy } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 
 export function UserNav() {
-  const userAvatar = PlaceHolderImages.find((img) => img.id === "user-avatar");
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
@@ -34,8 +32,9 @@ export function UserNav() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative h-12 w-12 rounded-full min-h-[48px] min-w-[48px] hover:scale-110 active:scale-95 transition-transform duration-200 touch-3d">
               <Avatar className="h-11 w-11 ring-2 ring-primary/20 hover:ring-primary/40 transition-all duration-200">
-                {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" />}
-                <AvatarFallback>JD</AvatarFallback>
+                <AvatarFallback className="bg-primary/10">
+                  <User className="h-5 w-5 text-primary" />
+                </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
@@ -81,8 +80,9 @@ export function UserNav() {
       ) : (
         <div className="h-12 w-12 rounded-full">
           <Avatar className="h-11 w-11 ring-2 ring-primary/20">
-            {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" />}
-            <AvatarFallback>JD</AvatarFallback>
+            <AvatarFallback className="bg-primary/10">
+              <User className="h-5 w-5 text-primary" />
+            </AvatarFallback>
           </Avatar>
         </div>
       )}

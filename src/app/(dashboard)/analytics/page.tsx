@@ -56,13 +56,19 @@ export default function AnalyticsPage() {
     // Fetch funnel data
     React.useEffect(() => {
         fetch('/api/analytics/funnel')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to fetch funnel data');
+                }
+                return res.json();
+            })
             .then(data => {
                 setFunnelData(data.funnel || []);
                 setLoadingFunnel(false);
             })
             .catch(err => {
                 console.error('Error fetching funnel:', err);
+                setFunnelData([]);
                 setLoadingFunnel(false);
             });
     }, []);
@@ -70,13 +76,19 @@ export default function AnalyticsPage() {
     // Fetch revenue data
     React.useEffect(() => {
         fetch('/api/analytics/revenue')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to fetch revenue data');
+                }
+                return res.json();
+            })
             .then(data => {
                 setRevenueData(data.monthlyRevenue || []);
                 setLoadingRevenue(false);
             })
             .catch(err => {
                 console.error('Error fetching revenue:', err);
+                setRevenueData([]);
                 setLoadingRevenue(false);
             });
     }, []);
@@ -84,13 +96,19 @@ export default function AnalyticsPage() {
     // Fetch channel performance
     React.useEffect(() => {
         fetch('/api/analytics/channels')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to fetch channel data');
+                }
+                return res.json();
+            })
             .then(data => {
                 setChannelData(data.channelPerformance || []);
                 setLoadingChannels(false);
             })
             .catch(err => {
                 console.error('Error fetching channels:', err);
+                setChannelData([]);
                 setLoadingChannels(false);
             });
     }, []);
@@ -98,13 +116,19 @@ export default function AnalyticsPage() {
     // Fetch time insights
     React.useEffect(() => {
         fetch('/api/analytics/time-insights')
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to fetch time insights');
+                }
+                return res.json();
+            })
             .then(data => {
                 setTimeInsights(data.insights || []);
                 setLoadingTimeInsights(false);
             })
             .catch(err => {
                 console.error('Error fetching time insights:', err);
+                setTimeInsights([]);
                 setLoadingTimeInsights(false);
             });
     }, []);

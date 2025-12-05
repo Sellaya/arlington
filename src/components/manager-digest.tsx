@@ -31,26 +31,54 @@ export function ManagerDigestCard({ interactions, leads, bookings }: {
   const [loading, setLoading] = React.useState(false);
   const [expanded, setExpanded] = React.useState(true); // Start expanded when digest is generated
 
-  const toggleExpanded = React.useCallback(() => {
-    setExpanded(prev => {
-      const newValue = !prev;
-      return newValue;
-    });
-  }, []);
+  const handleToggleExpanded = () => {
+    setExpanded(prev => !prev);
+  };
 
   const generateDigest = async () => {
     setLoading(true);
     try {
+      // Serialize data properly, converting Date objects to strings
+      const serializedData = {
+        interactions: interactions.map(i => ({
+          ...i,
+          timestamp: i.timestamp instanceof Date ? i.timestamp.toISOString() : i.timestamp,
+        })),
+        leads: leads.map(l => ({
+          ...l,
+          lastInteraction: l.lastInteraction instanceof Date ? l.lastInteraction.toISOString() : l.lastInteraction,
+        })),
+        bookings: bookings.map(b => ({
+          ...b,
+          dateTime: b.dateTime instanceof Date ? b.dateTime.toISOString() : b.dateTime,
+        })),
+      };
+
       const response = await fetch('/api/ai/manager-digest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          interactions,
-          leads,
-          bookings,
-        }),
+        body: JSON.stringify(serializedData),
       });
 
+      if (!response.ok) {
+        let errorMessage = 'Failed to generate digest';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If response is not JSON, try to get text
+          try {
+            const errorText = await response.text();
+            if (errorText && errorText.length < 200) {
+              errorMessage = errorText;
+            }
+          } catch {
+            // Ignore text parsing errors
+          }
+        }
+        throw new Error(errorMessage);
+      }
+      
       const data = await response.json();
       setDigest(data);
       setExpanded(true);
@@ -58,7 +86,7 @@ export function ManagerDigestCard({ interactions, leads, bookings }: {
       console.error('Error generating digest:', error);
       toast({
         title: 'Error',
-        description: 'Failed to generate manager digest',
+        description: error instanceof Error ? error.message : 'Failed to generate manager digest',
         variant: 'destructive',
       });
     } finally {
@@ -134,7 +162,7 @@ export function ManagerDigestCard({ interactions, leads, bookings }: {
               Refresh
             </Button>
             <Button
-              onClick={toggleExpanded}
+              onClick={handleToggleExpanded}
               variant="ghost"
               size="sm"
               type="button"

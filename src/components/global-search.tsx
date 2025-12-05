@@ -54,7 +54,12 @@ export function GlobalSearch({ open, onOpenChange }: GlobalSearchProps) {
     const searchQuery = query.toLowerCase();
 
     fetch('/api/data')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        return res.json();
+      })
       .then(data => {
         const allResults: SearchResult[] = [];
 

@@ -73,7 +73,12 @@ export default function InteractionsPage() {
 
   React.useEffect(() => {
     fetch('/api/data')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        return res.json();
+      })
       .then(data => {
         // Convert timestamp strings back to Date objects
         const processedInteractions = (data.interactions || []).map((interaction: any) => ({
@@ -107,7 +112,12 @@ export default function InteractionsPage() {
             eventType: selectedInteraction.eventType,
             eventDescription: selectedInteraction.eventDescription,
           }),
-        }).then(res => res.json()).catch(() => null),
+        }).then(res => {
+          if (!res.ok) {
+            return null;
+          }
+          return res.json();
+        }).catch(() => null),
         fetch('/api/ai/next-action', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -116,7 +126,12 @@ export default function InteractionsPage() {
             eventType: selectedInteraction.eventType,
             headcount: selectedInteraction.headcount,
           }),
-        }).then(res => res.json()).catch(() => null),
+        }).then(res => {
+          if (!res.ok) {
+            return null;
+          }
+          return res.json();
+        }).catch(() => null),
       ]).then(([tags, action]) => {
         setIntentTags(tags);
         setNextAction(action);
@@ -141,6 +156,10 @@ export default function InteractionsPage() {
           nextAction,
         }),
       });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to generate follow-up draft');
+      }
       const draft = await response.json();
       setFollowUpDraft(draft);
     } catch (error) {

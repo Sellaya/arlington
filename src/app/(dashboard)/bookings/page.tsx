@@ -137,7 +137,12 @@ export default function BookingsPage() {
 
   React.useEffect(() => {
     fetch('/api/data')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        return res.json();
+      })
       .then(data => {
         // Convert dateTime strings back to Date objects
         const processedBookings = (data.bookings || []).map((booking: any) => ({

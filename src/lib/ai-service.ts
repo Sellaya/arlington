@@ -119,12 +119,24 @@ Respond in JSON format:
       throw new Error('AI model not available');
     }
 
-    const response = await generate({
-      model: model,
-      prompt: prompt,
-    });
+    let response;
+    try {
+      response = await generate({
+        model: model,
+        prompt: prompt,
+      });
+    } catch (genError) {
+      console.error('Error calling AI generate:', genError);
+      throw new Error('Failed to generate AI response');
+    }
 
-    const text = response.text();
+    let text;
+    try {
+      text = response.text();
+    } catch (textError) {
+      console.error('Error getting response text:', textError);
+      throw new Error('Failed to get AI response text');
+    }
     // Try to parse JSON from response
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
@@ -203,12 +215,24 @@ Respond in JSON format:
       throw new Error('AI model not available');
     }
 
-    const response = await generate({
-      model: model,
-      prompt: prompt,
-    });
+    let response;
+    try {
+      response = await generate({
+        model: model,
+        prompt: prompt,
+      });
+    } catch (genError) {
+      console.error('Error calling AI generate:', genError);
+      throw new Error('Failed to generate AI response');
+    }
 
-    const text = response.text();
+    let text;
+    try {
+      text = response.text();
+    } catch (textError) {
+      console.error('Error getting response text:', textError);
+      throw new Error('Failed to get AI response text');
+    }
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -276,12 +300,24 @@ Respond in JSON format:
       throw new Error('AI model not available');
     }
 
-    const response = await generate({
-      model: model,
-      prompt: prompt,
-    });
+    let response;
+    try {
+      response = await generate({
+        model: model,
+        prompt: prompt,
+      });
+    } catch (genError) {
+      console.error('Error calling AI generate:', genError);
+      throw new Error('Failed to generate AI response');
+    }
 
-    const text = response.text();
+    let text;
+    try {
+      text = response.text();
+    } catch (textError) {
+      console.error('Error getting response text:', textError);
+      throw new Error('Failed to get AI response text');
+    }
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -346,12 +382,24 @@ Respond in JSON format:
       throw new Error('AI model not available');
     }
 
-    const response = await generate({
-      model: model,
-      prompt: prompt,
-    });
+    let response;
+    try {
+      response = await generate({
+        model: model,
+        prompt: prompt,
+      });
+    } catch (genError) {
+      console.error('Error calling AI generate:', genError);
+      throw new Error('Failed to generate AI response');
+    }
 
-    const text = response.text();
+    let text;
+    try {
+      text = response.text();
+    } catch (textError) {
+      console.error('Error getting response text:', textError);
+      throw new Error('Failed to get AI response text');
+    }
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
@@ -380,6 +428,73 @@ Respond in JSON format:
   }
 }
 
+// Generate fallback digest without AI
+function generateFallbackDigest(
+  interactions: Interaction[],
+  leads: Lead[],
+  bookings: any[],
+  todayInteractions: Interaction[]
+): ManagerDigest {
+  // Calculate metrics from data
+  const newLeads = leads.filter(l => l.status === 'New').length;
+  const qualifiedLeads = leads.filter(l => l.status === 'Qualified').length;
+  const hotLeads = qualifiedLeads + newLeads;
+  const atRiskLeads = leads.filter(l => l.status === 'Contacted' && l.status !== 'Qualified').length;
+  const cancellations = bookings.filter(b => b.status === 'Cancelled').length;
+  
+  // Calculate average quality score if available
+  const leadsWithScores = leads.filter(l => l.qualityScore);
+  const avgQualityScore = leadsWithScores.length > 0
+    ? Math.round(leadsWithScores.reduce((sum, l) => sum + (l.qualityScore?.score || 0), 0) / leadsWithScores.length)
+    : 0;
+
+  const summary = `Today's activity summary: ${todayInteractions.length} interactions, ${leads.length} leads, and ${bookings.length} bookings. ${hotLeads} hot leads identified, ${atRiskLeads} leads at risk, and ${cancellations} cancellations.`;
+
+  const highlights: string[] = [];
+  if (hotLeads > 0) {
+    highlights.push(`${hotLeads} hot leads requiring immediate attention`);
+  }
+  if (atRiskLeads > 0) {
+    highlights.push(`${atRiskLeads} leads at risk of being lost`);
+  }
+  if (cancellations > 0) {
+    highlights.push(`${cancellations} booking cancellation${cancellations > 1 ? 's' : ''} today`);
+  }
+  if (newLeads > 0) {
+    highlights.push(`${newLeads} new lead${newLeads > 1 ? 's' : ''} added today`);
+  }
+  if (highlights.length === 0) {
+    highlights.push('No significant activity to report');
+  }
+
+  const recommendations: string[] = [];
+  if (newLeads > 0) {
+    recommendations.push(`Follow up with ${newLeads} new lead${newLeads > 1 ? 's' : ''} within 24 hours`);
+  }
+  if (atRiskLeads > 0) {
+    recommendations.push(`Re-engage ${atRiskLeads} at-risk lead${atRiskLeads > 1 ? 's' : ''} to prevent churn`);
+  }
+  if (qualifiedLeads > 0) {
+    recommendations.push(`Convert ${qualifiedLeads} qualified lead${qualifiedLeads > 1 ? 's' : ''} to bookings`);
+  }
+  if (recommendations.length === 0) {
+    recommendations.push('Continue monitoring leads and interactions');
+  }
+
+  return {
+    summary,
+    highlights,
+    metrics: {
+      totalInteractions: todayInteractions.length,
+      hotLeads,
+      atRisk: atRiskLeads,
+      cancellations,
+      avgQualityScore,
+    },
+    recommendations,
+  };
+}
+
 /**
  * Generate manager digest for end-of-day summary
  */
@@ -389,10 +504,22 @@ export async function generateManagerDigest(
   bookings: any[]
 ): Promise<ManagerDigest> {
   try {
+    // Safely filter today's interactions
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
     const todayInteractions = interactions.filter(i => {
-      const today = new Date();
-      const interactionDate = i.timestamp instanceof Date ? i.timestamp : new Date(i.timestamp);
-      return interactionDate.toDateString() === today.toDateString();
+      try {
+        if (!i || !i.timestamp) return false;
+        const interactionDate = i.timestamp instanceof Date 
+          ? i.timestamp 
+          : new Date(i.timestamp);
+        if (isNaN(interactionDate.getTime())) return false;
+        interactionDate.setHours(0, 0, 0, 0);
+        return interactionDate.getTime() === today.getTime();
+      } catch {
+        return false;
+      }
     });
 
     const prompt = `Generate an end-of-day manager digest summary.
@@ -403,10 +530,18 @@ Today's Activity:
 - Total Bookings: ${bookings.length}
 
 Recent Interactions Summary:
-${todayInteractions.slice(0, 10).map(i => `- ${i.customer.name}: ${i.transcript?.substring(0, 100) || 'No transcript'}`).join('\n')}
+${todayInteractions.slice(0, 10).map(i => {
+  const name = i?.customer?.name || 'Unknown';
+  const transcript = i?.transcript?.substring(0, 100) || 'No transcript';
+  return `- ${name}: ${transcript}`;
+}).join('\n')}
 
 Lead Statuses:
-${leads.map(l => `- ${l.name}: ${l.status}`).join('\n')}
+${leads.slice(0, 50).map(l => {
+  const name = l?.name || 'Unknown';
+  const status = l?.status || 'Unknown';
+  return `- ${name}: ${status}`;
+}).join('\n')}
 
 Provide:
 1. A concise summary paragraph
@@ -430,58 +565,78 @@ Respond in JSON format:
 
     const model = getModel();
     if (!model) {
-      throw new Error('AI model not available');
+      // Return fallback digest when AI model is not available
+      return generateFallbackDigest(interactions, leads, bookings, todayInteractions);
     }
 
-    const response = await generate({
-      model: model,
-      prompt: prompt,
-    });
+    let response;
+    try {
+      response = await generate({
+        model: model,
+        prompt: prompt,
+      });
+    } catch (genError) {
+      console.error('Error calling AI generate:', genError);
+      // Return fallback digest instead of throwing
+      return generateFallbackDigest(interactions, leads, bookings, todayInteractions);
+    }
 
-    const text = response.text();
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (jsonMatch) {
-      const parsed = JSON.parse(jsonMatch[0]);
+    let text;
+    try {
+      text = response.text();
+    } catch (textError) {
+      console.error('Error getting response text:', textError);
+      // Return fallback digest instead of throwing
+      return generateFallbackDigest(interactions, leads, bookings, todayInteractions);
+    }
+    
+    let parsed;
+    try {
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      }
+    } catch (parseError) {
+      console.error('Error parsing AI response JSON:', parseError);
+      // Fall through to fallback response
+    }
+    
+    if (parsed) {
       return {
         summary: parsed.summary || 'Daily activity summary',
-        highlights: parsed.highlights || [],
+        highlights: Array.isArray(parsed.highlights) ? parsed.highlights : [],
         metrics: {
           totalInteractions: todayInteractions.length,
-          hotLeads: parsed.metrics?.hotLeads || 0,
-          atRisk: parsed.metrics?.atRisk || 0,
-          cancellations: parsed.metrics?.cancellations || 0,
-          avgQualityScore: parsed.metrics?.avgQualityScore || 0,
+          hotLeads: typeof parsed.metrics?.hotLeads === 'number' ? parsed.metrics.hotLeads : 0,
+          atRisk: typeof parsed.metrics?.atRisk === 'number' ? parsed.metrics.atRisk : 0,
+          cancellations: typeof parsed.metrics?.cancellations === 'number' ? parsed.metrics.cancellations : 0,
+          avgQualityScore: typeof parsed.metrics?.avgQualityScore === 'number' ? parsed.metrics.avgQualityScore : 0,
         },
-        recommendations: parsed.recommendations || [],
+        recommendations: Array.isArray(parsed.recommendations) ? parsed.recommendations : [],
       };
     }
 
-    return {
-      summary: `You had ${todayInteractions.length} interactions today.`,
-      highlights: [],
-      metrics: {
-        totalInteractions: todayInteractions.length,
-        hotLeads: 0,
-        atRisk: 0,
-        cancellations: 0,
-        avgQualityScore: 0,
-      },
-      recommendations: [],
-    };
+    // Return fallback digest if AI response couldn't be parsed
+    return generateFallbackDigest(interactions, leads, bookings, todayInteractions);
   } catch (error) {
     console.error('Error generating manager digest:', error);
-    return {
-      summary: 'Unable to generate digest',
-      highlights: [],
-      metrics: {
-        totalInteractions: 0,
-        hotLeads: 0,
-        atRisk: 0,
-        cancellations: 0,
-        avgQualityScore: 0,
-      },
-      recommendations: [],
-    };
+    // Return fallback digest on any error
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayInteractions = interactions.filter(i => {
+      try {
+        if (!i || !i.timestamp) return false;
+        const interactionDate = i.timestamp instanceof Date 
+          ? i.timestamp 
+          : new Date(i.timestamp);
+        if (isNaN(interactionDate.getTime())) return false;
+        interactionDate.setHours(0, 0, 0, 0);
+        return interactionDate.getTime() === today.getTime();
+      } catch {
+        return false;
+      }
+    });
+    return generateFallbackDigest(interactions, leads, bookings, todayInteractions);
   }
 }
 
@@ -527,12 +682,24 @@ Respond in JSON format:
       throw new Error('AI model not available');
     }
 
-    const response = await generate({
-      model: model,
-      prompt: prompt,
-    });
+    let response;
+    try {
+      response = await generate({
+        model: model,
+        prompt: prompt,
+      });
+    } catch (genError) {
+      console.error('Error calling AI generate:', genError);
+      throw new Error('Failed to generate AI response');
+    }
 
-    const text = response.text();
+    let text;
+    try {
+      text = response.text();
+    } catch (textError) {
+      console.error('Error getting response text:', textError);
+      throw new Error('Failed to get AI response text');
+    }
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);

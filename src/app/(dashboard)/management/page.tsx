@@ -165,7 +165,12 @@ export default function ManagementPage() {
 
   React.useEffect(() => {
     fetch('/api/data')
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) {
+          throw new Error('Failed to fetch data');
+        }
+        return res.json();
+      })
       .then(data => {
         setLeads(data.leads || []);
         setContacts(data.contacts || []);
@@ -184,6 +189,9 @@ export default function ManagementPage() {
     try {
       // Find related interaction
       const interactionsResponse = await fetch('/api/data');
+      if (!interactionsResponse.ok) {
+        throw new Error('Failed to fetch interactions');
+      }
       const data = await interactionsResponse.json();
       const interaction = (data.interactions || []).find(
         (i: any) => i.customer.name.toLowerCase() === lead.name.toLowerCase()
@@ -208,6 +216,10 @@ export default function ManagementPage() {
         }),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to generate quality score');
+      }
       const qualityScore = await response.json();
       
       // Update lead with quality score
@@ -233,6 +245,9 @@ export default function ManagementPage() {
     
     try {
       const interactionsResponse = await fetch('/api/data');
+      if (!interactionsResponse.ok) {
+        throw new Error('Failed to fetch interactions');
+      }
       const data = await interactionsResponse.json();
       const interactions = data.interactions || [];
 
@@ -245,6 +260,10 @@ export default function ManagementPage() {
         }),
       });
 
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || 'Failed to generate timeline summary');
+      }
       const summary = await response.json();
       setTimelineSummary(summary);
     } catch (error) {
